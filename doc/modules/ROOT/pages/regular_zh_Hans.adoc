@@ -1,12 +1,12 @@
 [#regular]
-= Regular Containers
+= 常规容器
 
 :idprefix: regular_
 
-Boost.Unordered closed-addressing containers (`boost::unordered_set`, `boost::unordered_map`, `boost::unordered_multiset` and `boost::unordered_multimap`) are fully conformant with the C++ specification for unordered associative containers, so for those who know how to use `std::unordered_set`, `std::unordered_map`, etc., their homonyms in Boost.Unordered are drop-in replacements. The interface of open-addressing containers (`boost::unordered_node_set`, `boost::unordered_node_map`, `boost::unordered_flat_set` and `boost::unordered_flat_map`) is very similar, but they present some minor differences listed in the dedicated xref:compliance.adoc#compliance_open_addressing_containers[standard compliance section].
+Boost.Unordered 闭址容器（`boost::unordered_set`、`boost::unordered_map`、`boost::unordered_multiset` 和 `boost::unordered_multimap`）完全符合 C++ 标准中关于无序关联容器的规范，因此对于了解如何使用 `std::unordered_set`、`std::unordered_map` 等的用户，Boost.Unordered 中的同名容器可以直接替换。开址容器（`boost::unordered_node_set`、`boost::unordered_node_map`、`boost::unordered_flat_set` 和 `boost::unordered_flat_map`）的接口非常相似，但它们存在一些细微差异，这些差异在专门的 xref:compliance.adoc#compliance_open_addressing_containers[标准合规性部分] 中列出。
 
 
-For readers without previous experience with hash containers but familiar with normal associative containers (`std::set`, `std::map`, `std::multiset` and `std::multimap`), Boost.Unordered containers are used in a similar manner:
+对于没有哈希容器使用经验但熟悉普通关联容器（`std::set`、`std::map`、`std::multiset` 和 `std::multimap`）的读者，Boost.Unordered 容器的使用方式类似：
 
 [source, cpp]
 ----
@@ -20,7 +20,7 @@ assert(x.at("one") == 1);
 assert(x.find("missing") == x.end());
 ----
 
-But since the elements aren't ordered, the output of:
+但由于元素是无序的，因此以下代码的输出：
 
 [source, c++]
 ----
@@ -29,7 +29,7 @@ for(const map::value_type& i: x) {
 }
 ----
 
-can be in any order. For example, it might be:
+可以是任意顺序。例如，可能是：
 
 [source]
 ----
@@ -38,15 +38,15 @@ one,1
 three,3
 ----
 
-There are other differences, which are listed in the xref:regular.adoc#comparison[Comparison with Associative Containers] section.
+还有其他差异，在 xref:regular.adoc#comparison[与关联容器的比较] 部分列出。
 
-== Iterator Invalidation
+== 迭代器失效
 
-It is not specified how member functions other than `rehash` and `reserve` affect the bucket count, although `insert` can only invalidate iterators when the insertion causes the container's load to be greater than the maximum allowed. For most implementations this means that `insert` will only change the number of buckets when this happens. Iterators can be invalidated by calls to `insert`, `rehash` and `reserve`.
+除了 `rehash` 和 `reserve` 外，未规定其他成员函数如何影响桶的数量，尽管 `insert` 仅当插入操作导致容器负载超过允许的最大值时才会使迭代器失效。对于大多数实现，这意味着 `insert` 仅在这种情况下才会改变桶的数量。调用 `insert`、`rehash` 和 `reserve` 可能导致迭代器失效。
 
-As for pointers and references, they are never invalidated for node-based containers (`boost::unordered_[multi]set`, `boost::unordered_[multi]map`, `boost::unordered_node_set`, `boost::unordered_node_map`), but they will be when rehashing occurs for `boost::unordered_flat_set` and `boost::unordered_flat_map`: this is because these containers store elements directly into their holding buckets, so when allocating a new bucket array the elements must be transferred by means of move construction.
+至于指针和引用，对于基于节点的容器（`boost::unordered_[multi]set`、`boost::unordered_[multi]map`、`boost::unordered_node_set`、`boost::unordered_node_map`）来说，它们永远不会失效，但对于 `boost::unordered_flat_set` 和 `boost::unordered_flat_map`，当发生重新哈希时，它们会失效：这是因为这些容器将元素直接存储在其持有的桶中，因此当分配新的桶数组时，必须通过移动构造来转移元素。
 
-In a similar manner to using `reserve` for ``vector``s, it can be a good idea to call `reserve` before inserting a large number of elements. This will get the expensive rehashing out of the way and let you store iterators, safe in the knowledge that they won't be invalidated. If you are inserting `n` elements into container `x`, you could first call:
+与为 ``vector`` 使用 `reserve` 类似，在插入大量元素之前调用 `reserve` 是一个好主意。这将避免昂贵的重新哈希操作，并让您可以安全地存储迭代器，因为知道它们不会失效。如果您要在容器 `x` 中插入 `n` 个元素，可以先调用：
 
 ```
 
@@ -54,9 +54,9 @@ x.reserve(n);
 
 ```
 
-Note:: `reserve(n)` reserves space for at least `n` elements, allocating enough buckets so as to not exceed the maximum load factor.
+注意:: `reserve(n)` 为至少 `n` 个元素预留空间，分配足够的桶以确保不超过最大负载因子。
 +
-Because the maximum load factor is defined as the number of elements divided by the total number of available buckets, this function is logically equivalent to:
+因为最大负载因子定义为元素数量除以可用桶的总数，所以此函数在逻辑上等价于：
 +
 ```
 
@@ -64,57 +64,57 @@ x.rehash(std::ceil(n / x.max_load_factor()))
 
 ```
 +
-See the xref:reference/unordered_map.adoc#unordered_map_rehash[reference for more details] on the `rehash` function.
+有关 `rehash` 函数的更多详细信息，请参阅 xref:reference/unordered_map.adoc#unordered_map_rehash[参考]。
 
 [#comparison]
 
 :idprefix: comparison_
 
-== Comparison with Associative Containers
+== 与关联容器的比较
 
 [caption=",",  title='Table {counter:table-counter} Interface differences']
 [cols="1,1", frame=all,,  grid=rows]
 |===
-|Associative Containers |Unordered Associative Containers
+|关联容器 |无序关联容器
 
-|Parameterized by an ordering relation `Compare`
-|Parameterized by a function object `Hash` and an equivalence relation `Pred`
+|由排序关系 `Compare` 参数化
+|由函数对象 `Hash` 和等价关系 `Pred` 参数化
 
-|Keys can be compared using `key_compare` which is accessed by member function `key_comp()`, values can be compared using `value_compare` which is accessed by member function `value_comp()`.
-|Keys can be hashed using `hasher` which is accessed by member function `hash_function()`, and checked for equality using `key_equal` which is accessed by member function `key_eq()`. There is no function object for compared or hashing values.
+|可以使用通过成员函数 `key_comp()` 访问的 `key_compare` 来比较键，使用通过成员函数 `value_comp()` 访问的 `value_compare` 来比较值。
+|可以使用通过成员函数 `hash_function()` 访问的 `hasher` 对键进行哈希处理，并使用通过成员函数 `key_eq()` 访问的 `key_equal` 检查键的相等性。没有用于比较或哈希值的函数对象。
 
-|Constructors have optional extra parameters for the comparison object.
-|Constructors have optional extra parameters for the initial minimum number of buckets, a hash function and an equality object.
+|构造函数具有用于比较对象的可选额外参数。
+|构造函数具有用于初始最小桶数、哈希函数和相等对象的可选额外参数。
 
-|Keys `k1`, `k2` are considered equivalent if `!Compare(k1, k2) && !Compare(k2, k1)`.
-|Keys `k1`, `k2` are considered equivalent if `Pred(k1, k2)`
+|如果 `!Compare(k1, k2) && !Compare(k2, k1)`，则键 `k1` 和 `k2` 被视为等价。
+|如果 `Pred(k1, k2)`，则键 `k1` 和 `k2` 被视为等价。
 
-|Member function `lower_bound(k)` and `upper_bound(k)`
-|No equivalent. Since the elements aren't ordered `lower_bound` and `upper_bound` would be meaningless.
+|成员函数 `lower_bound(k)` 和 `upper_bound(k)`
+|无等效函数。由于元素无序，`lower_bound` 和 `upper_bound` 将无意义。
 
-|`equal_range(k)` returns an empty range at the position that `k` would be inserted if `k` isn't present in the container.
-|`equal_range(k)` returns a range at the end of the container if `k` isn't present in the container. It can't return a positioned range as `k` could be inserted into multiple place. +
-**Closed-addressing containers:** To find out the bucket that `k` would be inserted into use `bucket(k)`. But remember that an insert can cause the container to rehash - meaning that the element can be inserted into a different bucket.
+|`equal_range(k)` 在 `k` 不存在于容器中时，返回一个位于 `k` 应插入位置的空范围。
+|如果 `k` 不存在于容器中，`equal_range(k)` 返回容器末尾的一个范围。它无法返回一个定位范围，因为 `k` 可能被插入到多个位置。 +
+**闭址容器：** 要找出 `k` 将被插入的桶，请使用 `bucket(k)`。但请记住，插入操作可能导致容器重新哈希——这意味着元素可能被插入到不同的桶中。
 
-|`iterator`, `const_iterator` are of the bidirectional category.
-|`iterator`, `const_iterator` are of at least the forward category.
+|`iterator` 和 `const_iterator` 属于双向迭代器类别。
+|`iterator` 和 `const_iterator` 至少属于前向迭代器类别。
 
-|Iterators, pointers and references to the container's elements are never invalidated.
-|xref:regular.adoc#regular_iterator_invalidation[Iterators can be invalidated by calls to insert or rehash]. +
-**Node-based containers:** Pointers and references to the container's elements are never invalidated. +
-**Flat containers:** Pointers and references to the container's elements are invalidated when rehashing occurs.
+|指向容器元素的迭代器、指针和引用永远不会失效。
+|xref:regular.adoc#regular_iterator_invalidation[迭代器可能因调用 insert 或 rehash 而失效]。 +
+**基于节点的容器：** 指向容器元素的指针和引用永远不会失效。 +
+**扁平容器：** 当发生重新哈希时，指向容器元素的指针和引用会失效。
 
-|Iterators iterate through the container in the order defined by the comparison object.
-|Iterators iterate through the container in an arbitrary order, that can change as elements are inserted, although equivalent elements are always adjacent.
+|迭代器按照比较对象定义的顺序遍历容器。
+|迭代器以任意顺序遍历容器，该顺序可能随元素的插入而改变，但等价元素始终相邻。
 
-|No equivalent
-|**Closed-addressing containers:** Local iterators can be used to iterate through individual buckets. (The order of local iterators and iterators aren't required to have any correspondence.)
+|无等效功能
+|**闭址容器：** 局部迭代器可用于遍历单个桶。（不要求局部迭代器与迭代器的顺序有任何对应关系。）
 
-|Can be compared using the `==`, `!=`, `<`, `\<=`, `>`, `>=` operators.
-|Can be compared using the `==` and `!=` operators.
+|可以使用 `==`、`!=`、`<`、`<=`、`>`、`>=` 运算符进行比较。
+|可以使用 `==` 和 `!=` 运算符进行比较。
 
 |
-|When inserting with a hint, implementations are permitted to ignore the hint.
+|当使用提示插入时，实现允许忽略提示。
 
 |===
 
@@ -123,58 +123,58 @@ See the xref:reference/unordered_map.adoc#unordered_map_rehash[reference for mor
 [caption=",",  title='Table {counter:table-counter} Complexity Guarantees']
 [cols="1,1,1", frame=all,,  grid=rows]
 |===
-|Operation |Associative Containers |Unordered Associative Containers
+|操作 |关联容器 |无序关联容器
 
-|Construction of empty container
-|constant
-|O(_n_) where _n_ is the minimum number of buckets.
+|构造空容器
+|常数
+|O(_n_)，其中 _n_ 为最小桶数。
 
-|Construction of container from a range of _N_ elements
-|O(_N log N_), O(_N_) if the range is sorted with `value_comp()`
-|Average case O(_N_), worst case O(_N^2^_)
+|从包含 _N_ 个元素的区间构造容器
+|O(_N log N_)，若该区间已按 `value_comp()` 排序则为 O(_N_)
+|平均情况 O(_N_)，最坏情况 O(_N^2^_)
 
-|Insert a single element
-|logarithmic
-|Average case constant, worst case linear
+|插入单个元素
+|对数
+|平均情况常数，最坏情况线性
 
-|Insert a single element with a hint
-|Amortized constant if `t` elements inserted right after hint, logarithmic otherwise
-|Average case constant, worst case linear (ie. the same as a normal insert).
+|使用提示插入单个元素
+|若在提示后立即插入元素则为分摊常数，否则为对数
+|平均情况常数，最坏情况线性（即与普通插入相同）。
 
-|Inserting a range of _N_ elements
+|插入包含 _N_ 个元素的区间
 |_N_ log(`size()` + _N_)
-|Average case O(_N_), worst case O(_N_ * `size()`)
+|平均情况 O(_N_)，最坏情况 O(_N_ * `size()`)
 
-|Erase by key, `k`
+|按键 `k` 删除
 |O(log(`size()`) + `count(k)`)
-|Average case: O(`count(k)`), Worst case: O(`size()`)
+|平均情况：O(`count(k)`)，最坏情况：O(`size()`)
 
-|Erase a single element by iterator
-|Amortized constant
-|Average case: O(1), Worst case: O(`size()`)
+|按迭代器删除单个元素
+|分摊常数
+|平均情况：O(1)，最坏情况：O(`size()`)
 
-|Erase a range of _N_ elements
+|删除包含 _N_ 个元素的区间
 |O(log(`size()`) + _N_)
-|Average case: O(_N_), Worst case: O(`size()`)
+|平均情况：O(_N_)，最坏情况：O(`size()`)
 
-|Clearing the container
+|清空容器
 |O(`size()`)
 |O(`size()`)
 
-|Find
-|logarithmic
-|Average case: O(1), Worst case: O(`size()`)
+|查找
+|对数
+|平均情况：O(1)，最坏情况：O(`size()`)
 
-|Count
+|计数
 |O(log(`size()`) + `count(k)`)
-|Average case: O(1), Worst case: O(`size()`)
+|平均情况：O(1)，最坏情况：O(`size()`)
 
 |`equal_range(k)`
-|logarithmic
-|Average case: O(`count(k)`), Worst case: O(`size()`)
+|对数
+|平均情况：O(`count(k)`)，最坏情况：O(`size()`)
 
-|`lower_bound`,`upper_bound`
-|logarithmic
-|n/a
+|`lower_bound`、`upper_bound`
+|对数
+|不适用
 
 |===
