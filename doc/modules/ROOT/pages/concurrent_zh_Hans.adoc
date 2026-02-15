@@ -1,9 +1,9 @@
 [#concurrent]
-= Concurrent Containers
+= 并发容器
 
 :idprefix: concurrent_
 
-Boost.Unordered provides `boost::concurrent_node_set`, `boost::concurrent_node_map`, `boost::concurrent_flat_set` and `boost::concurrent_flat_map`, hash tables that allow concurrent write/read access from different threads without having to implement any synchronzation mechanism on the user's side.
+Boost.Unordered 提供了 `boost::concurrent_node_set`、`boost::concurrent_node_map`、`boost::concurrent_flat_set` 和 `boost::concurrent_flat_map`，这些哈希表允许不同线程进行并发读写访问，而无需用户自行实现任何同步机制。
 
 [source, c++]
 ----
@@ -12,14 +12,14 @@ boost::concurrent_flat_map<int,int> m;
 
 ...
 
-// process input in parallel
+// 并行处理输入
 const int                 num_threads = 8;
 std::vector<std::jthread> threads;
-std::size_t               chunk = input.size() / num_threads; // how many elements per thread
+std::size_t               chunk = input.size() / num_threads; // 每个线程处理的元素数量
 
 for (int i = 0; i < num_threads; ++i) {
   threads.emplace_back([&,i] {
-    // calculate the portion of input this thread takes care of
+    // 计算该线程负责的输入部分
     std::size_t start = i * chunk;
     std::size_t end = (i == num_threads - 1)? input.size(): (i + 1) * chunk;
 
@@ -30,52 +30,52 @@ for (int i = 0; i < num_threads; ++i) {
 }
 ----
 
-In the example above, threads access `m` without synchronization, just as we'd do in a single-threaded scenario. In an ideal setting, if a given workload is distributed among _N_ threads, execution is _N_ times faster than with one thread —this limit is never attained in practice due to synchronization overheads and _contention_ (one thread waiting for another to leave a locked portion of the map), but Boost.Unordered concurrent containers are designed to perform with very little overhead and typically achieve _linear scaling_ (that is, performance is proportional to the number of threads up to the number of logical cores in the CPU).
+在上例中，线程访问 `m` 时无需同步，就像在单线程场景中一样。在理想情况下，若将给定工作负载分配给 _N_ 个线程，执行速度将比单线程快 _N_ 倍——由于同步开销和_争用_（一个线程等待另一个线程离开映射的锁定区域），实践中永远无法达到此极限。但 Boost.Unordered 的并发容器设计为以极低开销运行，通常能实现_线性扩展_（即性能与线程数成正比，最高可达 CPU 的逻辑核心数）。
 
-== Visitation-based API
+== 基于访问的 API
 
-The first thing a new user of Boost.Unordered concurrent containers will notice is that these classes _do not provide iterators_ (which makes them technically not https://en.cppreference.com/w/cpp/named_req/Container[Containers^] in the C++ standard sense). The reason for this is that iterators are inherently thread-unsafe. Consider this hypothetical code:
+Boost.Unordered 并发容器的新用户首先会注意到这些类_不提供迭代器_（这使它们在技术上不符合 C++ 标准意义上的 https://en.cppreference.com/w/cpp/named_req/Container[容器^] 要求）。原因在于迭代器本质上是线程不安全的。考虑以下假设代码：
 
 [source, c++]
 ----
-auto it = m.find(k);  // A: get an iterator pointing to the element with key k
+auto it = m.find(k);  // A：获取指向键为 k 的元素的迭代器
 if (it != m.end() ) {
-  some_function(*it); // B: use the value of the element
+  some_function(*it); // B：使用元素的值
 }
 ----
 
-In a multithreaded scenario, the iterator `it` may be invalid at point B if some other thread issues an `m.erase(k)` operation between A and B. There are designs that can remedy this by making iterators lock the element they point to, but this approach lends itself to high contention and can easily produce deadlocks in a program. `operator[]` has similar concurrency issues, and is not provided by `boost::concurrent_flat_map`/`boost::concurrent_node_map` either. Instead, element access is done through so-called _visitation functions_:
+在多线程场景中，若其他线程在 A 和 B 之间执行了 `m.erase(k)` 操作，迭代器 `it` 在 B 点可能已失效。虽然可通过锁定迭代器指向的元素来解决此问题，但这种方法易引发高争用并可能导致程序死锁。`operator[]` 存在类似的并发问题，因此 `boost::concurrent_flat_map`/`boost::concurrent_node_map` 也未提供该操作。相反，元素访问通过所谓的_访问函数_实现：
 
 [source, c++]
 ----
-m.visit(k, [](const auto& x) { // x is the element with key k (if it exists)
-  some_function(x);            // use it
+m.visit(k, [](const auto& x) { // x 是键为 k 的元素（若存在）
+  some_function(x);            // 使用该元素
 });
 ----
 
-The visitation function passed by the user (in this case, a lambda function) is executed internally by Boost.Unordered in a thread-safe manner, so it can access the element without worrying about other threads interfering in the process.
+用户传递的访问函数（此处为 lambda 函数）由 Boost.Unordered 内部以线程安全方式执行，因此可在访问元素时无需担心其他线程干扰。
 
-On the other hand, a visitation function can _not_ access the container itself:
+另一方面，访问函数_不能_访问容器本身：
 
 [source, c++]
 ----
 m.visit(k, [&](const auto& x) {
-  some_function(x, m.size()); // forbidden: m can't be accessed inside visitation
+  some_function(x, m.size()); // 禁止：不能在访问函数内部访问 m
 });
 ----
 
-Access to a different container is allowed, though:
+但允许访问其他容器：
 
 [source, c++]
 ----
 m.visit(k, [&](const auto& x) {
   if (some_function(x)) {
-    m2.insert(x); // OK, m2 is a different boost::concurrent_flat_map
+    m2.insert(x); // 允许，m2 是另一个 boost::concurrent_flat_map
   }
 });
 ----
 
-But, in general, visitation functions should be as lightweight as possible to reduce contention and increase parallelization. In some cases, moving heavy work outside of visitation may be beneficial:
+但通常，访问函数应尽可能轻量以减少争用并提高并行性。某些情况下，将繁重工作移出访问函数可能更有利：
 
 [source, c++]
 ----
@@ -88,89 +88,89 @@ if (found) {
 }
 ----
 
-Visitation is prominent in the API provided by concurrent containers, and many classical operations have visitation-enabled variations:
+访问机制在并发容器的 API 中占据重要地位，许多经典操作都有支持访问的变体：
 
 [source, c++]
 ----
 m.insert_or_visit(x, [](auto& y) {
-  // if insertion failed because of an equivalent element y,
-  // do something with it, for instance:
-  ++y.second; // increment the mapped part of the element
+  // 若因存在等价元素 y 导致插入失败
+  // 可对其进行操作，例如：
+  ++y.second; // 递增元素的映射部分
 });
 ----
 
-Note that in this last example the visitation function could actually _modify_ the element: as a general rule, operations on a concurrent map `m` will grant visitation functions const/non-const access to the element depending on whether `m` is const/non-const. Const access can be always be explicitly requested by using `cvisit` overloads (for instance, `insert_or_cvisit`) and may result in higher parallelization. For concurrent sets, on the other hand, visitation is always const access.
+注意在此最后示例中，访问函数实际上可_修改_元素：通常，对非常量并发映射 `m` 的操作会授予访问函数对元素的非常量访问权限；若 `m` 为常量则授予常量访问权限。始终可通过 `cvisit` 重载（如 `insert_or_cvisit`）显式请求常量访问，这可能提高并行性。而对于并发集合，访问始终为常量访问。
 
-Although expected to be used much less frequently, concurrent containers also provide insertion operations where an element can be visited right after element creation (in addition to the usual visitation when an equivalent element already exists):
+尽管预期使用频率较低，但并发容器还提供在元素创建后立即访问的插入操作（除在等价元素已存在时的常规访问外）：
 
 [source, c++]
 ----
   m.insert_and_cvisit(x,
     [](const auto& y) {
-      std::cout<< "(" << y.first << ", " << y.second <<") inserted\n";
+      std::cout<< "(" << y.first << ", " << y.second <<") 已插入\n";
     },
     [](const auto& y) {
-      std::cout<< "(" << y.first << ", " << y.second << ") already exists\n";
+      std::cout<< "(" << y.first << ", " << y.second << ") 已存在\n";
     });
 ----
 
-Consult the references of `xref:reference/concurrent_node_set.adoc#concurrent_node_set[boost::concurrent_node_set]`, `xref:reference/concurrent_node_map.adoc#concurrent_node_map[boost::concurrent_node_map]`, `xref:reference/concurrent_flat_set.adoc#concurrent_flat_set[boost::concurrent_flat_set]` and `xref:reference/concurrent_flat_map.adoc#concurrent_flat_map[boost::concurrent_flat_map]` for the complete list of visitation-enabled operations.
+完整支持访问的操作列表请查阅 `xref:reference/concurrent_node_set.adoc#concurrent_node_set[boost::concurrent_node_set]`、`xref:reference/concurrent_node_map.adoc#concurrent_node_map[boost::concurrent_node_map]`、`xref:reference/concurrent_flat_set.adoc#concurrent_flat_set[boost::concurrent_flat_set]` 和 `xref:reference/concurrent_flat_map.adoc#concurrent_flat_map[boost::concurrent_flat_map]` 的参考文档。
 
-== Whole-Table Visitation
+== 全表访问
 
-In the absence of iterators, `visit_all` is provided as an alternative way to process all the elements in the container:
+在缺乏迭代器的情况下，`visit_all` 提供了处理容器内所有元素的替代方法：
 
 [source, c++]
 ----
 m.visit_all([](auto& x) {
-  x.second = 0; // reset the mapped part of the element
+  x.second = 0; // 重置元素的映射部分
 });
 ----
 
-In C++17 compilers implementing standard parallel algorithms, whole-table visitation can be parallelized:
+在支持 C++17 标准并行算法的编译器中，全表访问可并行化：
 
 [source, c++]
 ----
-m.visit_all(std::execution::par, [](auto& x) { // run in parallel
-  x.second = 0; // reset the mapped part of the element
+m.visit_all(std::execution::par, [](auto& x) { // 并行运行
+  x.second = 0; // 重置元素的映射部分
 });
 ----
 
-Traversal can be interrupted midway:
+遍历可中途中断：
 
 [source, c++]
 ----
-// finds the key to a given (unique) value
+// 查找给定（唯一）值对应的键
 
 int  key = 0;
 int  value = ...;
 bool found = !m.visit_while([&](const auto& x) {
   if(x.second == value) {
     key = x.first;
-    return false; // finish
+    return false; // 结束
   }
   else {
-    return true;  // keep on visiting
+    return true;  // 继续访问
   }
 });
 
 if(found) { ... }
 ----
 
-There is one last whole-table visitation operation, `erase_if`:
+最后还有一个全表访问操作 `erase_if`：
 
 [source, c++]
 ----
 m.erase_if([](auto& x) {
-  return x.second == 0; // erase the elements whose mapped value is zero
+  return x.second == 0; // 删除映射值为零的元素
 });
 ----
 
-`visit_while` and `erase_if` can also be parallelized. Note that, in order to increase efficiency, whole-table visitation operations do not block the table during execution: this implies that elements may be inserted, modified or erased by other threads during visitation. It is advisable not to assume too much about the exact global state of a concurrent container at any point in your program.
+`visit_while` 和 `erase_if` 也可并行化。注意，为提高效率，全表访问操作在执行期间不会锁定表：这意味着其他线程可能在访问期间插入、修改或删除元素。建议不要对程序中任意时刻的并发容器全局状态做过强假设。
 
-== Bulk visitation
+== 批量访问
 
-Suppose you have an `std::array` of keys you want to look up for in a concurrent map:
+假设有一个需在并发映射中查找的 `std::array` 键数组：
 
 [source, c++]
 ----
@@ -181,21 +181,21 @@ for(const auto& key: keys) {
 }
 ----
 
-_Bulk visitation_ allows us to pass all the keys in one operation:
+_批量访问_允许通过单次操作传递所有键：
 
 [source, c++]
 ----
 m.visit(keys.begin(), keys.end(), [](auto& x) { ++x.second; });
 ----
 
-This functionality is not provided for mere syntactic convenience, though: by processing all the keys at once, some internal optimizations can be applied that increase performance over the regular, one-at-a-time case (consult the xref:benchmarks.adoc#benchmarks_boostconcurrent_flatnode_map[benchmarks]). In fact, it may be beneficial to buffer incoming keys so that they can be bulk visited in chunks:
+此功能不仅为语法便利：通过一次性处理所有键，可应用某些内部优化以提升性能（相比逐次处理）。实际上，缓冲传入键以便分块批量访问可能更有利：
 
 [source, c++]
 ----
 static constexpr auto bulk_visit_size = boost::concurrent_flat_map<int,int>::bulk_visit_size;
 std::array<int, bulk_visit_size> buffer;
 std::size_t                      i=0;
-while(...) { // processing loop
+while(...) { // 处理循环
   ...
   buffer[i++] = k;
   if(i == bulk_visit_size) {
@@ -204,23 +204,23 @@ while(...) { // processing loop
   }
   ...
 }
-// flush remaining keys
+// 刷新剩余键
 map.visit(buffer.begin(), buffer.begin() + i, [](auto& x) { ++x.second; });
 ----
 
-There's a latency/throughput tradeoff here: it will take longer for incoming keys to be processed (since they are buffered), but the number of processed keys per second is higher. `bulk_visit_size` is the recommended chunk size —smaller buffers may yield worse performance.
+这里存在延迟与吞吐量的权衡：传入键的处理时间更长（因需缓冲），但每秒处理量更高。`bulk_visit_size` 是推荐的块大小——更小的缓冲区可能导致性能下降。
 
-== Blocking Operations
+== 阻塞操作
 
-Concurrent containers can be copied, assigned, cleared and merged just like any other Boost.Unordered container. Unlike most other operations, these are _blocking_, that is, all other threads are prevented from accesing the tables involved while a copy, assignment, clear or merge operation is in progress. Blocking is taken care of automatically by the library and the user need not take any special precaution, but overall performance may be affected.
+并发容器可像其他 Boost.Unordered 容器一样复制、赋值、清空和合并。与大多数操作不同，这些操作是_阻塞的_，即在复制、赋值、清空或合并过程中，其他线程无法访问相关表。阻塞由库自动处理，用户无需特别防范，但整体性能可能受影响。
 
-Another blocking operation is _rehashing_, which happens explicitly via `rehash`/`reserve` or during insertion when the table's load hits `max_load()`. As with non-concurrent containers, reserving space in advance of bulk insertions will generally speed up the process.
+另一阻塞操作是_重哈希_，可通过 `rehash`/`reserve` 显式触发，或在插入时当表负载达到 `max_load()` 时发生。与非并发容器类似，在批量插入前预留空间通常可加速过程。
 
-== Interoperability with non-concurrent containers
+== 与非并发容器的互操作性
 
-As open-addressing and concurrent containers are based on the same internal data structure, they can be efficiently move-constructed from their non-concurrent counterpart, and vice versa.
+由于开放寻址容器与并发容器基于相同的内部数据结构，它们可高效地通过移动构造从其非并发对应容器转换而来，反之亦然。
 
-[caption=",",  title='Table {counter:table-counter}. Concurrent/non-concurrent interoperatibility']
+[caption="，",  title='Table {counter:table-counter}. Concurrent/non-concurrent interoperatibility']
 [cols="1,1", frame=all,,  grid=all]
 |===
 ^|`boost::concurrent_node_set`
@@ -237,13 +237,13 @@ As open-addressing and concurrent containers are based on the same internal data
 
 |===
 
-This interoperability comes handy in multistage scenarios where parts of the data processing happen in parallel whereas other steps are non-concurrent (or non-modifying). In the following example, we want to construct a histogram from a huge input vector of words: the population phase can be done in parallel with `boost::concurrent_flat_map` and results then transferred to the final container.
+这种互操作性在分阶段处理场景中非常实用：部分数据处理并行执行，而其他步骤则非并发（或非修改性）。在以下示例中，我们需要从庞大的单词输入向量构建直方图：填充阶段可使用 `boost::concurrent_flat_map` 并行完成，然后将结果转移至最终容器。
 
 [source, c++]
 ----
 std::vector<std::string> words = ...;
 
-// Insert words in parallel
+// 并行插入单词
 boost::concurrent_flat_map<std::string_view, std::size_t> m0;
 std::for_each(
   std::execution::par, words.begin(), words.end(),
@@ -251,6 +251,6 @@ std::for_each(
     m0.try_emplace_or_visit(word, 1, [](auto& x) { ++x.second; });
   });
 
-// Transfer to a regular unordered_flat_map
+// 转移至常规 unordered_flat_map
 boost::unordered_flat_map m=std::move(m0);
 ----
