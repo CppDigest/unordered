@@ -4,6 +4,8 @@
 :idprefix: intro_
 :cpp: C++
 
+update to 1.90.0
+
 link:https://en.wikipedia.org/wiki/Hash_table[哈希表^]是极其流行的计算机数据结构，几乎在任何编程语言中都能以某种形式找到。虽然其他关联结构（如红黑树（在{cpp}中由`std::set`和`std::map`使用））的插入和查找操作具有对数时间复杂度，但如果配置得当，哈希表在平均情况下能以常数时间执行这些操作，并且通常快得多。
 
 {cpp}在{cpp}11中引入了__无序关联容器__ `std::unordered_set`、`std::unordered_map`、`std::unordered_multiset`和`std::unordered_multimap`，但哈希表的研究并未止步：CPU架构的进步（如更强大的缓存、link:https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]指令集以及日益普及的link:https://en.wikipedia.org/wiki/Multi-core_processor[多核处理器]）为改进的基于哈希的数据结构开辟了可能性，并催生了2011年规范的无序关联容器无法实现的新用例。
