@@ -1,0 +1,180 @@
+[#regular]
+= 通常のコンテナ
+
+:idprefix: regular_
+
+Boost.Unorderedの閉アドレス方式コンテナ（`boost::unordered_set`、`boost::unordered_map`、`boost::unordered_multiset`、`boost::unordered_multimap`）は、非順序連想コンテナに関するC++仕様に完全に準拠しています。したがって、`std::unordered_set`、`std::unordered_map`などの使用方法を知っているユーザーにとって、Boost.Unorderedの同名コンテナはそのまま置き換え可能です。開アドレス方式コンテナ（`boost::unordered_node_set`、`boost::unordered_node_map`、`boost::unordered_flat_set`、`boost::unordered_flat_map`）のインターフェースは非常に似ていますが、専用のxref:compliance.adoc#compliance_open_addressing_containers[標準準拠セクション]に記載されているいくつかの細かい違いがあります。
+
+
+ハッシュコンテナの使用経験はないが、通常の連想コンテナ（`std::set`、`std::map`、`std::multiset`、`std::multimap`）に慣れている読者のために、Boost.Unorderedコンテナは同様の方法で使用されます：
+
+[source, cpp]
+----
+typedef boost::unordered_map<std::string, int> map;
+map x;
+x["one"] = 1;
+x["two"] = 2;
+x["three"] = 3;
+
+assert(x.at("one") == 1);
+assert(x.find("missing") == x.end());
+----
+
+ただし、要素は順序付けられていないため、以下の出力は：
+
+[source, c++]
+----
+for(const map::value_type& i: x) {
+    std::cout<<i.first<<","<<i.second<<"\n";
+}
+----
+
+任意の順序になる可能性があります。例えば、以下のようになるかもしれません：
+
+[source]
+----
+two,2
+one,1
+three,3
+----
+
+その他の違いについては、xref:regular.adoc#comparison[連想コンテナとの比較]セクションにリストされています。
+
+== イテレータの無効化
+
+`rehash`および`reserve`以外のメンバ関数がバケット数にどのように影響するかは規定されていませんが、`insert`は挿入によってコンテナの負荷が許容最大値を超えた場合にのみイテレータを無効化します。ほとんどの実装では、これは`insert`がバケット数を変更するのはその場合のみであることを意味します。イテレータは`insert`、`rehash`、`reserve`の呼び出しによって無効化される可能性があります。
+
+ポインタと参照に関しては、ノードベースのコンテナ（`boost::unordered_[multi]set`、`boost::unordered_[multi]map`、`boost::unordered_node_set`、`boost::unordered_node_map`）では決して無効化されませんが、`boost::unordered_flat_set`および`boost::unordered_flat_map`では再ハッシュが発生すると無効化されます。これは、これらのコンテナが要素を保持バケットに直接格納するため、新しいバケット配列を割り当てる際に要素をムーブ構築によって転送する必要があるからです。
+
+`vector`に対して`reserve`を使用するのと同様に、多数の要素を挿入する前に`reserve`を呼び出すことは良い考えです。これにより、高コストな再ハッシュを事前に実行し、イテレータを安全に保存できます。コンテナ`x`に`n`個の要素を挿入する場合、最初に以下を呼び出すことができます：
+
+```
+
+x.reserve(n);
+
+```
+
+注記:: `reserve(n)`は少なくとも`n`個の要素のためのスペースを予約し、最大負荷率を超えないように十分なバケットを割り当てます。
++
+最大負荷率は要素数を利用可能なバケットの総数で割った値として定義されるため、この関数は論理的に以下と等価です：
++
+```
+
+x.rehash(std::ceil(n / x.max_load_factor()))
+
+```
++
+`rehash`関数の詳細については、xref:reference/unordered_map.adoc#unordered_map_rehash[リファレンスを参照してください]。
+
+[#comparison]
+
+:idprefix: comparison_
+
+== 連想コンテナとの比較
+
+[caption=",",  title='Table {counter:table-counter} Interface differences']
+[cols="1,1", frame=all,,  grid=rows]
+|===
+|連想コンテナ |非順序連想コンテナ
+
+|順序関係`Compare`によってパラメータ化される
+|関数オブジェクト`Hash`と等価関係`Pred`によってパラメータ化される
+
+|キーはメンバ関数`key_comp()`でアクセスされる`key_compare`を使用して比較でき、値はメンバ関数`value_comp()`でアクセスされる`value_compare`を使用して比較できる。
+|キーはメンバ関数`hash_function()`でアクセスされる`hasher`を使用してハッシュ化でき、メンバ関数`key_eq()`でアクセスされる`key_equal`を使用して等価性がチェックされる。値の比較やハッシュ化のための関数オブジェクトは存在しない。
+
+|コンストラクタは比較オブジェクトのための追加パラメータをオプションで持つ。
+|コンストラクタは初期最小バケット数、ハッシュ関数、等価オブジェクトのための追加パラメータをオプションで持つ。
+
+|キー`k1`、`k2`は`!Compare(k1, k2) && !Compare(k2, k1)`の場合に等価とみなされる。
+|キー`k1`、`k2`は`Pred(k1, k2)`の場合に等価とみなされる。
+
+|メンバ関数`lower_bound(k)`および`upper_bound(k)`が存在する。
+|同等の機能なし。要素が順序付けられていないため、`lower_bound`と`upper_bound`は意味をなさない。
+
+|`equal_range(k)`は、`k`がコンテナに存在しない場合、`k`が挿入される位置に空の範囲を返す。
+|`k`がコンテナに存在しない場合、`equal_range(k)`はコンテナの末尾に範囲を返す。`k`は複数の場所に挿入される可能性があるため、位置指定された範囲を返すことはできない。 +
+**閉アドレス方式コンテナ：** `k`が挿入されるバケットを調べるには`bucket(k)`を使用する。ただし、挿入によってコンテナが再ハッシュされる可能性があることに注意すること。つまり、要素が異なるバケットに挿入される可能性がある。
+
+|`iterator`、`const_iterator`は双方向イテレータカテゴリである。
+|`iterator`、`const_iterator`は少なくとも前方向イテレータカテゴリである。
+
+|コンテナの要素へのイテレータ、ポインタ、参照は決して無効化されない。
+|xref:regular.adoc#regular_iterator_invalidation[イテレータはinsertまたはrehashの呼び出しによって無効化される可能性がある]。 +
+**ノードベースコンテナ：** コンテナの要素へのポインタと参照は決して無効化されない。 +
+**フラットコンテナ：** コンテナの要素へのポインタと参照は再ハッシュ発生時に無効化される。
+
+|イテレータは比較オブジェクトによって定義された順序でコンテナを走査する。
+|イテレータは任意の順序でコンテナを走査し、その順序は要素が挿入されるたびに変化する可能性があるが、等価な要素は常に隣接する。
+
+|同等の機能なし
+|**閉アドレス方式コンテナ：** ローカルイテレータを使用して個々のバケットを走査できる。（ローカルイテレータとイテレータの順序には対応関係が必要ない。）
+
+|`==`、`!=`、`<`、`\<=`、`>`、`>=`演算子を使用して比較できる。
+|`==`および`!=`演算子を使用して比較できる。
+
+|
+|ヒント付き挿入の場合、実装はヒントを無視することが許可されている。
+
+|===
+
+---
+
+[caption=",",  title='Table {counter:table-counter} Complexity Guarantees']
+[cols="1,1,1", frame=all,,  grid=rows]
+|===
+|操作 |連想コンテナ |非順序連想コンテナ
+
+|空のコンテナの構築
+|定数
+|O(_n_)（_n_ は最小バケット数）
+
+|_N_ 個の要素の範囲からのコンテナ構築
+|O(_N log N_)（範囲が`value_comp()`でソートされている場合は O(_N_)）
+|平均ケース O(_N_)、最悪ケース O(_N^2^_)
+
+|単一要素の挿入
+|対数時間
+|平均ケース定数時間、最悪ケース線形時間
+
+|ヒント付き単一要素挿入
+|ヒント直後に挿入される場合償却定数時間、それ以外は対数時間
+|平均ケース定数時間、最悪ケース線形時間（通常の挿入と同じ）
+
+|_N_ 個の要素の範囲の挿入
+|_N_ log(`size()` + _N_)
+|平均ケース O(_N_)、最悪ケース O(_N_ * `size()`)
+
+|キー`k`による削除
+|O(log(`size()`) + `count(k)`)
+|平均ケース: O(`count(k)`)、最悪ケース: O(`size()`)
+
+|イテレータによる単一要素削除
+|償却定数時間
+|平均ケース: O(1)、最悪ケース: O(`size()`)
+
+|_N_ 個の要素の範囲の削除
+|O(log(`size()`) + _N_)
+|平均ケース: O(_N_)、最悪ケース: O(`size()`)
+
+|コンテナのクリア
+|O(`size()`)
+|O(`size()`)
+
+|検索
+|対数時間
+|平均ケース: O(1)、最悪ケース: O(`size()`)
+
+|カウント
+|O(log(`size()`) + `count(k)`)
+|平均ケース: O(1)、最悪ケース: O(`size()`)
+
+|`equal_range(k)`
+|対数時間
+|平均ケース: O(`count(k)`)、最悪ケース: O(`size()`)
+
+|`lower_bound`、`upper_bound`
+|対数時間
+|該当なし
+
+|===
