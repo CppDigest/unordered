@@ -1,12 +1,12 @@
 [#regular]
-= Regular Containers
+= Обычные контейнеры
 
 :idprefix: regular_
 
-Boost.Unordered closed-addressing containers (`boost::unordered_set`, `boost::unordered_map`, `boost::unordered_multiset` and `boost::unordered_multimap`) are fully conformant with the C++ specification for unordered associative containers, so for those who know how to use `std::unordered_set`, `std::unordered_map`, etc., their homonyms in Boost.Unordered are drop-in replacements. The interface of open-addressing containers (`boost::unordered_node_set`, `boost::unordered_node_map`, `boost::unordered_flat_set` and `boost::unordered_flat_map`) is very similar, but they present some minor differences listed in the dedicated xref:compliance.adoc#compliance_open_addressing_containers[standard compliance section].
+Контейнеры с закрытой адресацией Boost.Unordered (`boost::unordered_set`, `boost::unordered_map`, `boost::unordered_multiset` и `boost::unordered_multimap`) полностью соответствуют спецификации C++ для неупорядоченных ассоциативных контейнеров. Поэтому для тех, кто знает, как использовать `std::unordered_set`, `std::unordered_map` и т.д., их одноименные аналоги в Boost.Unordered являются прямыми заменами. Интерфейс контейнеров с открытой адресацией (`boost::unordered_node_set`, `boost::unordered_node_map`, `boost::unordered_flat_set` и `boost::unordered_flat_map`) очень похож, но имеет некоторые незначительные отличия, перечисленные в специальном разделе xref:compliance.adoc#compliance_open_addressing_containers[соответствия стандарту].
 
 
-For readers without previous experience with hash containers but familiar with normal associative containers (`std::set`, `std::map`, `std::multiset` and `std::multimap`), Boost.Unordered containers are used in a similar manner:
+Для читателей без опыта работы с хеш-контейнерами, но знакомых с обычными ассоциативными контейнерами (`std::set`, `std::map`, `std::multiset` и `std::multimap`), контейнеры Boost.Unordered используются аналогичным образом:
 
 [source, cpp]
 ----
@@ -20,7 +20,7 @@ assert(x.at("one") == 1);
 assert(x.find("missing") == x.end());
 ----
 
-But since the elements aren't ordered, the output of:
+Но поскольку элементы не упорядочены, вывод:
 
 [source, c++]
 ----
@@ -29,7 +29,7 @@ for(const map::value_type& i: x) {
 }
 ----
 
-can be in any order. For example, it might be:
+может быть в любом порядке. Например, он может быть таким:
 
 [source]
 ----
@@ -38,15 +38,15 @@ one,1
 three,3
 ----
 
-There are other differences, which are listed in the xref:regular.adoc#comparison[Comparison with Associative Containers] section.
+Есть и другие различия, которые перечислены в разделе xref:regular.adoc#comparison[Сравнение с ассоциативными контейнерами].
 
-== Iterator Invalidation
+== Инвалидация итераторов
 
-It is not specified how member functions other than `rehash` and `reserve` affect the bucket count, although `insert` can only invalidate iterators when the insertion causes the container's load to be greater than the maximum allowed. For most implementations this means that `insert` will only change the number of buckets when this happens. Iterators can be invalidated by calls to `insert`, `rehash` and `reserve`.
+Не указано, как функции-члены, кроме `rehash` и `reserve`, влияют на количество сегментов, хотя `insert` может инвалидировать итераторы только тогда, когда вставка приводит к тому, что нагрузка контейнера превышает максимально допустимую. Для большинства реализаций это означает, что `insert` будет изменять количество сегментов только в этом случае. Итераторы могут быть инвалидированы вызовами `insert`, `rehash` и `reserve`.
 
-As for pointers and references, they are never invalidated for node-based containers (`boost::unordered_[multi]set`, `boost::unordered_[multi]map`, `boost::unordered_node_set`, `boost::unordered_node_map`), but they will be when rehashing occurs for `boost::unordered_flat_set` and `boost::unordered_flat_map`: this is because these containers store elements directly into their holding buckets, so when allocating a new bucket array the elements must be transferred by means of move construction.
+Что касается указателей и ссылок, они никогда не инвалидируются для нодных контейнеров (`boost::unordered_[multi]set`, `boost::unordered_[multi]map`, `boost::unordered_node_set`, `boost::unordered_node_map`), но будут инвалидироваться при рехешировании для `boost::unordered_flat_set` и `boost::unordered_flat_map`: это связано с тем, что эти контейнеры хранят элементы непосредственно в своих сегментах, поэтому при выделении нового массива сегментов элементы должны быть перенесены посредством перемещающего конструирования.
 
-In a similar manner to using `reserve` for ``vector``s, it can be a good idea to call `reserve` before inserting a large number of elements. This will get the expensive rehashing out of the way and let you store iterators, safe in the knowledge that they won't be invalidated. If you are inserting `n` elements into container `x`, you could first call:
+Аналогично использованию `reserve` для ``vector``, может быть хорошей идеей вызвать `reserve` перед вставкой большого количества элементов. Это позволит выполнить дорогостоящий рехеш заранее и сохранять итераторы, будучи уверенным, что они не будут инвалидированы. Если вы вставляете `n` элементов в контейнер `x`, вы можете сначала вызвать:
 
 ```
 
@@ -54,9 +54,9 @@ x.reserve(n);
 
 ```
 
-Note:: `reserve(n)` reserves space for at least `n` elements, allocating enough buckets so as to not exceed the maximum load factor.
+Примечание:: `reserve(n)` резервирует место как минимум для `n` элементов, выделяя достаточно сегментов, чтобы не превысить максимальный коэффициент загрузки.
 +
-Because the maximum load factor is defined as the number of elements divided by the total number of available buckets, this function is logically equivalent to:
+Поскольку максимальный коэффициент загрузки определяется как количество элементов, деленное на общее количество доступных сегментов, эта функция логически эквивалентна:
 +
 ```
 
@@ -64,57 +64,57 @@ x.rehash(std::ceil(n / x.max_load_factor()))
 
 ```
 +
-See the xref:reference/unordered_map.adoc#unordered_map_rehash[reference for more details] on the `rehash` function.
+См. xref:reference/unordered_map.adoc#unordered_map_rehash[справочник для получения дополнительной информации] о функции `rehash`.
 
 [#comparison]
 
 :idprefix: comparison_
 
-== Comparison with Associative Containers
+== Сравнение с ассоциативными контейнерами
 
 [caption=",",  title='Table {counter:table-counter} Interface differences']
 [cols="1,1", frame=all,,  grid=rows]
 |===
-|Associative Containers |Unordered Associative Containers
+|Ассоциативные контейнеры |Неупорядоченные ассоциативные контейнеры
 
-|Parameterized by an ordering relation `Compare`
-|Parameterized by a function object `Hash` and an equivalence relation `Pred`
+|Параметризуются отношением упорядочивания `Compare`
+|Параметризуются функциональным объектом `Hash` и отношением эквивалентности `Pred`
 
-|Keys can be compared using `key_compare` which is accessed by member function `key_comp()`, values can be compared using `value_compare` which is accessed by member function `value_comp()`.
-|Keys can be hashed using `hasher` which is accessed by member function `hash_function()`, and checked for equality using `key_equal` which is accessed by member function `key_eq()`. There is no function object for compared or hashing values.
+|Ключи можно сравнивать с помощью `key_compare`, доступного через функцию-член `key_comp()`, значения можно сравнивать с помощью `value_compare`, доступного через функцию-член `value_comp()`.
+|Ключи можно хешировать с помощью `hasher`, доступного через функцию-член `hash_function()`, и проверять на эквивалентность с помощью `key_equal`, доступного через функцию-член `key_eq()`. Нет функционального объекта для сравнения или хеширования значений.
 
-|Constructors have optional extra parameters for the comparison object.
-|Constructors have optional extra parameters for the initial minimum number of buckets, a hash function and an equality object.
+|Конструкторы имеют дополнительные необязательные параметры для объекта сравнения.
+|Конструкторы имеют дополнительные необязательные параметры для начального минимального количества сегментов, функции хеширования и объекта эквивалентности.
 
-|Keys `k1`, `k2` are considered equivalent if `!Compare(k1, k2) && !Compare(k2, k1)`.
-|Keys `k1`, `k2` are considered equivalent if `Pred(k1, k2)`
+|Ключи `k1`, `k2` считаются эквивалентными, если `!Compare(k1, k2) && !Compare(k2, k1)`.
+|Ключи `k1`, `k2` считаются эквивалентными, если `Pred(k1, k2)`
 
-|Member function `lower_bound(k)` and `upper_bound(k)`
-|No equivalent. Since the elements aren't ordered `lower_bound` and `upper_bound` would be meaningless.
+|Функция-член `lower_bound(k)` и `upper_bound(k)`
+|Нет эквивалента. Поскольку элементы не упорядочены, `lower_bound` и `upper_bound` не имеют смысла.
 
-|`equal_range(k)` returns an empty range at the position that `k` would be inserted if `k` isn't present in the container.
-|`equal_range(k)` returns a range at the end of the container if `k` isn't present in the container. It can't return a positioned range as `k` could be inserted into multiple place. +
-**Closed-addressing containers:** To find out the bucket that `k` would be inserted into use `bucket(k)`. But remember that an insert can cause the container to rehash - meaning that the element can be inserted into a different bucket.
+|`equal_range(k)` возвращает пустой диапазон в позиции, куда был бы вставлен `k`, если `k` отсутствует в контейнере.
+|`equal_range(k)` возвращает диапазон в конце контейнера, если `k` отсутствует в контейнере. Он не может возвращать позиционированный диапазон, так как `k` может быть вставлен в несколько мест. +
+**Контейнеры с закрытой адресацией:** Чтобы узнать сегмент, в который был бы вставлен `k`, используйте `bucket(k)`. Но помните, что вставка может вызвать рехеш контейнера, что означает, что элемент может быть вставлен в другой сегмент.
 
-|`iterator`, `const_iterator` are of the bidirectional category.
-|`iterator`, `const_iterator` are of at least the forward category.
+|`iterator`, `const_iterator` относятся к двунаправленной категории.
+|`iterator`, `const_iterator` относятся как минимум к прямой категории.
 
-|Iterators, pointers and references to the container's elements are never invalidated.
-|xref:regular.adoc#regular_iterator_invalidation[Iterators can be invalidated by calls to insert or rehash]. +
-**Node-based containers:** Pointers and references to the container's elements are never invalidated. +
-**Flat containers:** Pointers and references to the container's elements are invalidated when rehashing occurs.
+|Итераторы, указатели и ссылки на элементы контейнера никогда не инвалидируются.
+|xref:regular.adoc#regular_iterator_invalidation[Итераторы могут быть инвалидированы вызовами insert или rehash]. +
+**Нодные контейнеры:** Указатели и ссылки на элементы контейнера никогда не инвалидируются. +
+**Плоские контейнеры:** Указатели и ссылки на элементы контейнера инвалидируются при рехешировании.
 
-|Iterators iterate through the container in the order defined by the comparison object.
-|Iterators iterate through the container in an arbitrary order, that can change as elements are inserted, although equivalent elements are always adjacent.
+|Итераторы проходят по контейнеру в порядке, определенном объектом сравнения.
+|Итераторы проходят по контейнеру в произвольном порядке, который может меняться при вставке элементов, хотя эквивалентные элементы всегда находятся рядом.
 
-|No equivalent
-|**Closed-addressing containers:** Local iterators can be used to iterate through individual buckets. (The order of local iterators and iterators aren't required to have any correspondence.)
+|Нет эквивалента
+|**Контейнеры с закрытой адресацией:** Локальные итераторы могут использоваться для обхода отдельных сегментов. (Порядок локальных итераторов и итераторов не обязательно должен соответствовать.)
 
-|Can be compared using the `==`, `!=`, `<`, `\<=`, `>`, `>=` operators.
-|Can be compared using the `==` and `!=` operators.
+|Могут сравниваться с помощью операторов `==`, `!=`, `<`, `\<=`, `>`, `>=`.
+|Могут сравниваться с помощью операторов `==` и `!=`.
 
 |
-|When inserting with a hint, implementations are permitted to ignore the hint.
+|При вставке с подсказкой реализации могут игнорировать подсказку.
 
 |===
 
@@ -123,58 +123,58 @@ See the xref:reference/unordered_map.adoc#unordered_map_rehash[reference for mor
 [caption=",",  title='Table {counter:table-counter} Complexity Guarantees']
 [cols="1,1,1", frame=all,,  grid=rows]
 |===
-|Operation |Associative Containers |Unordered Associative Containers
+|Операция |Ассоциативные контейнеры |Неупорядоченные ассоциативные контейнеры
 
-|Construction of empty container
-|constant
-|O(_n_) where _n_ is the minimum number of buckets.
+|Создание пустого контейнера
+|константа
+|O(_n_), где _n_ — минимальное количество сегментов.
 
-|Construction of container from a range of _N_ elements
-|O(_N log N_), O(_N_) if the range is sorted with `value_comp()`
-|Average case O(_N_), worst case O(_N^2^_)
+|Создание контейнера из диапазона из _N_ элементов
+|O(_N log N_), O(_N_), если диапазон отсортирован с помощью `value_comp()`
+|Средний случай O(_N_), худший случай O(_N^2^_)
 
-|Insert a single element
-|logarithmic
-|Average case constant, worst case linear
+|Вставка одного элемента
+|логарифмическая
+|Средний случай константа, худший случай линейная
 
-|Insert a single element with a hint
-|Amortized constant if `t` elements inserted right after hint, logarithmic otherwise
-|Average case constant, worst case linear (ie. the same as a normal insert).
+|Вставка одного элемента с подсказкой
+|Амортизированная константа, если элементы вставляются сразу после подсказки, в противном случае логарифмическая
+|Средний случай константа, худший случай линейная (т.е. как при обычной вставке).
 
-|Inserting a range of _N_ elements
+|Вставка диапазона из _N_ элементов
 |_N_ log(`size()` + _N_)
-|Average case O(_N_), worst case O(_N_ * `size()`)
+|Средний случай O(_N_), худший случай O(_N_ * `size()`)
 
-|Erase by key, `k`
+|Удаление по ключу `k`
 |O(log(`size()`) + `count(k)`)
-|Average case: O(`count(k)`), Worst case: O(`size()`)
+|Средний случай: O(`count(k)`), худший случай: O(`size()`)
 
-|Erase a single element by iterator
-|Amortized constant
-|Average case: O(1), Worst case: O(`size()`)
+|Удаление одного элемента по итератору
+|Амортизированная константа
+|Средний случай: O(1), худший случай: O(`size()`)
 
-|Erase a range of _N_ elements
+|Удаление диапазона из _N_ элементов
 |O(log(`size()`) + _N_)
-|Average case: O(_N_), Worst case: O(`size()`)
+|Средний случай: O(_N_), худший случай: O(`size()`)
 
-|Clearing the container
+|Очистка контейнера
 |O(`size()`)
 |O(`size()`)
 
-|Find
-|logarithmic
-|Average case: O(1), Worst case: O(`size()`)
+|Поиск
+|логарифмическая
+|Средний случай: O(1), худший случай: O(`size()`)
 
-|Count
+|Подсчет
 |O(log(`size()`) + `count(k)`)
-|Average case: O(1), Worst case: O(`size()`)
+|Средний случай: O(1), худший случай: O(`size()`)
 
 |`equal_range(k)`
-|logarithmic
-|Average case: O(`count(k)`), Worst case: O(`size()`)
+|логарифмическая
+|Средний случай: O(`count(k)`), худший случай: O(`size()`)
 
-|`lower_bound`,`upper_bound`
-|logarithmic
-|n/a
+|`lower_bound`, `upper_bound`
+|логарифмическая
+|н/д
 
 |===
