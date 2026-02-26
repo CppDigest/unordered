@@ -1,25 +1,25 @@
 [#intro]
-= Introduction
+= はじめに
 
 :idprefix: intro_
 :cpp: C++
 
-update to 1.90.0
+1.90.0への更新
 
-link:https://en.wikipedia.org/wiki/Hash_table[Hash tables^] are extremely popular computer data structures and can be found under one form or another in virtually any programming language. Whereas other associative structures such as rb-trees (used in {cpp} by `std::set` and `std::map`) have logarithmic-time complexity for insertion and lookup, hash tables, if configured properly, perform these operations in constant time on average, and are generally much faster.
+link:https://en.wikipedia.org/wiki/Hash_table[ハッシュテーブル^]は非常に人気のあるコンピュータデータ構造であり、事実上あらゆるプログラミング言語で何らかの形で見つけることができる。一方、赤黒木（{cpp}では`std::set`や`std::map`で使用される）のような他の連想構造は挿入と検索に対数時間計算量を要するのに対し、ハッシュテーブルは、適切に設定されていれば、これらの操作を平均的に定数時間で実行し、一般的にはるかに高速である。
 
-{cpp} introduced __unordered associative containers__ `std::unordered_set`, `std::unordered_map`, `std::unordered_multiset` and `std::unordered_multimap` in {cpp}11, but research on hash tables hasn't stopped since: advances in CPU architectures such as more powerful caches, link:https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD] operations and increasingly available link:https://en.wikipedia.org/wiki/Multi-core_processor[multicore processors] open up possibilities for improved hash-based data structures and new use cases that are simply beyond reach of unordered associative containers as specified in 2011.
+{cpp}は、{cpp}11で__非順序連想コンテナ__ `std::unordered_set`、`std::unordered_map`、`std::unordered_multiset`、`std::unordered_multimap`を導入した。しかし、それ以降もハッシュテーブルの研究は止まっていない：より強力なキャッシュ、link:https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]操作、そしてますます利用可能になっているlink:https://en.wikipedia.org/wiki/Multi-core_processor[マルチコアプロセッサ]といったCPUアーキテクチャの進歩により、2011年に規定された非順序連想コンテナの単純な範囲を超えた、改良されたハッシュベースのデータ構造と新しいユースケースの可能性が開かれた。
 
-Boost.Unordered offers a catalog of hash containers with different standards compliance levels, performances and intented usage scenarios:
+Boost.Unorderedは、さまざまな標準準拠レベル、パフォーマンス、および想定される使用シナリオを持つハッシュコンテナのカタログを提供する：
 
 [caption=",",  title='Table {counter:table-counter}. Boost.Unordered containers']
 [cols="1,1,.^1", frame=all,,  grid=all]
 |===
 ^h|
-^h|*Node-based*
-^h|*Flat*
+^h|*ノードベース*
+^h|*フラット*
 
-^.^h|*Closed addressing*
+^.^h|*閉アドレス法*
 ^m|
 boost::unordered_set +
 boost::unordered_map +
@@ -27,13 +27,13 @@ boost::unordered_multiset +
 boost::unordered_multimap
 ^|
 
-^.^h|*Open addressing*
+^.^h|*開アドレス法*
 ^m| boost::unordered_node_set +
 boost::unordered_node_map
 ^m| boost::unordered_flat_set +
 boost::unordered_flat_map
 
-^.^h|*Concurrent*
+^.^h|*並行*
 ^| `boost::concurrent_node_set` +
 `boost::concurrent_node_map`
 ^| `boost::concurrent_flat_set` +
@@ -41,11 +41,11 @@ boost::unordered_flat_map
 
 |===
 
-* **Closed-addressing containers** are fully compliant with the C++ specification for unordered associative containers and feature one of the fastest implementations in the market within the technical constraints imposed by the required standard interface.
-* **Open-addressing containers** rely on much faster data structures and algorithms (more than 2 times faster in typical scenarios) while slightly diverging from the standard interface to accommodate the implementation. There are two variants: **flat** (the fastest) and **node-based**, which provide pointer stability under rehashing at the expense of being slower.
-* Finally, **concurrent containers** are designed and implemented to be used in high-performance multithreaded scenarios. Their interface is radically different from that of regular C++ containers. Flat and node-based variants are provided.
+* **閉アドレス法コンテナ**は、非順序連想コンテナのC++仕様に完全に準拠しており、必要な標準インターフェースによって課せられる技術的制約の中で、市場で最も高速な実装の1つを特徴としている。
+* **開アドレス法コンテナ**は、標準インターフェースからわずかに逸脱して実装を可能にすることで、はるかに高速なデータ構造とアルゴリズム（典型的なシナリオでは2倍以上高速）に依存している。2つのバリエーションがある：**フラット**（最速）と**ノードベース**（再ハッシュ時のポインタ安定性を提供するが、その分遅い）。
+* 最後に、**並行コンテナ**は、高性能なマルチスレッドシナリオで使用するために設計および実装されている。それらのインターフェースは通常のC++コンテナとは根本的に異なる。フラットとノードベースのバリエーションが提供されている。
 
-All sets and maps in Boost.Unordered are instantiatied similarly as `std::unordered_set` and `std::unordered_map`, respectively:
+Boost.Unorderedのすべてのセットとマップは、それぞれ`std::unordered_set`および`std::unordered_map`と同様にインスタンス化される：
 
 [source, c++]
 ----
@@ -70,4 +70,4 @@ namespace boost {
 }
 ----
 
-Storing an object in an unordered associative container requires both a key equality function and a hash function. The default function objects in the standard containers support a few basic types including integer types, floating point types, pointer types, and the standard strings. Since Boost.Unordered uses link:../../../../container_hash/index.html[boost::hash^] it also supports some other types, including standard containers. To use any types not supported by these methods you have to extend Boost.Hash to support the type or use your own custom equality predicates and hash functions. See the xref:hash_equality.adoc#hash_equality[Equality Predicates and Hash Functions], section for more details.
+オブジェクトを非順序連想コンテナに格納するには、キー等価関数とハッシュ関数の両方が必要である。標準コンテナのデフォルト関数オブジェクトは、整数型、浮動小数点型、ポインタ型、標準文字列を含むいくつかの基本型をサポートしている。Boost.Unorderedはlink:../../../../container_hash/index.html[boost::hash^]を使用するため、標準コンテナを含む他のいくつかの型もサポートしている。これらのメソッドでサポートされていない型を使用するには、Boost.Hashを拡張してその型をサポートするか、独自のカスタム等価述語とハッシュ関数を使用する必要がある。詳細については、xref:hash_equality.adoc#hash_equality[等価述語とハッシュ関数]のセクションを参照のこと。
