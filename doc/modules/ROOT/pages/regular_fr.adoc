@@ -1,0 +1,180 @@
+[#regular]
+= Conteneurs standards
+
+:idprefix: regular_
+
+Les conteneurs à adressage fermé de Boost.Unordered (`boost::unordered_set`, `boost::unordered_map`, `boost::unordered_multiset` et `boost::unordered_multimap`) sont entièrement conformes à la spécification C++ pour les conteneurs associatifs non ordonnés, donc pour ceux qui savent utiliser `std::unordered_set`, `std::unordered_map`, etc., leurs homonymes dans Boost.Unordered sont des remplacements directs. L'interface des conteneurs à adressage ouvert (`boost::unordered_node_set`, `boost::unordered_node_map`, `boost::unordered_flat_set` et `boost::unordered_flat_map`) est très similaire, mais ils présentent quelques différences mineures listées dans la section dédiée xref:compliance.adoc#compliance_open_addressing_containers[de conformité standard].
+
+
+Pour les lecteurs sans expérience préalable des conteneurs de hachage mais familiers avec les conteneurs associatifs normaux (`std::set`, `std::map`, `std::multiset` et `std::multimap`), les conteneurs Boost.Unordered s'utilisent de manière similaire :
+
+[source, cpp]
+----
+typedef boost::unordered_map<std::string, int> map;
+map x;
+x["one"] = 1;
+x["two"] = 2;
+x["three"] = 3;
+
+assert(x.at("one") == 1);
+assert(x.find("missing") == x.end());
+----
+
+Mais comme les éléments ne sont pas ordonnés, la sortie de :
+
+[source, c++]
+----
+for(const map::value_type& i: x) {
+    std::cout<<i.first<<","<<i.second<<"\n";
+}
+----
+
+peut être dans n'importe quel ordre. Par exemple, cela pourrait être :
+
+[source]
+----
+two,2
+one,1
+three,3
+----
+
+Il existe d'autres différences, qui sont listées dans la section xref:regular.adoc#comparison[Comparaison avec les conteneurs associatifs].
+
+== Invalidation des itérateurs
+
+Il n'est pas spécifié comment les fonctions membres autres que `rehash` et `reserve` affectent le nombre de seaux, bien que `insert` ne puisse invalider les itérateurs que lorsque l'insertion provoque une charge du conteneur supérieure au maximum autorisé. Pour la plupart des implémentations, cela signifie que `insert` ne changera le nombre de seaux que lorsque cela se produit. Les itérateurs peuvent être invalidés par des appels à `insert`, `rehash` et `reserve`.
+
+En ce qui concerne les pointeurs et les références, ils ne sont jamais invalidés pour les conteneurs basés sur des nœuds (`boost::unordered_[multi]set`, `boost::unordered_[multi]map`, `boost::unordered_node_set`, `boost::unordered_node_map`), mais ils le seront lorsque un rehachage se produit pour `boost::unordered_flat_set` et `boost::unordered_flat_map` : cela est dû au fait que ces conteneurs stockent les éléments directement dans leurs seaux de stockage, donc lors de l'allocation d'un nouveau tableau de seaux, les éléments doivent être transférés au moyen d'une construction par déplacement.
+
+De manière similaire à l'utilisation de `reserve` pour ``vector``s, il peut être judicieux d'appeler `reserve` avant d'insérer un grand nombre d'éléments. Cela effectuera le coûteux rehachage à l'avance et vous permettra de stocker des itérateurs, en étant sûr qu'ils ne seront pas invalidés. Si vous insérez `n` éléments dans le conteneur `x`, vous pouvez d'abord appeler :
+
+```
+
+x.reserve(n);
+
+```
+
+Remarque:: `reserve(n)` réserve de l'espace pour au moins `n` éléments, en allouant suffisamment de seaux pour ne pas dépasser le facteur de charge maximum.
++
+Comme le facteur de charge maximum est défini comme le nombre d'éléments divisé par le nombre total de seaux disponibles, cette fonction est logiquement équivalente à :
++
+```
+
+x.rehash(std::ceil(n / x.max_load_factor()))
+
+```
++
+Voir la xref:reference/unordered_map.adoc#unordered_map_rehash[référence pour plus de détails] sur la fonction `rehash`.
+
+[#comparison]
+
+:idprefix: comparison_
+
+== Comparaison avec les conteneurs associatifs
+
+[caption=",",  title='Table {counter:table-counter} Interface differences']
+[cols="1,1", frame=all,,  grid=rows]
+|===
+|Conteneurs associatifs |Conteneurs associatifs non ordonnés
+
+|Paramétrés par une relation d'ordre `Compare`
+|Paramétrés par un objet fonction `Hash` et une relation d'équivalence `Pred`
+
+|Les clés peuvent être comparées en utilisant `key_compare` qui est accessible par la fonction membre `key_comp()`, les valeurs peuvent être comparées en utilisant `value_compare` qui est accessible par la fonction membre `value_comp()`.
+|Les clés peuvent être hachées en utilisant `hasher` qui est accessible par la fonction membre `hash_function()`, et vérifiées pour l'égalité en utilisant `key_equal` qui est accessible par la fonction membre `key_eq()`. Il n'y a pas d'objet fonction pour comparer ou hacher les valeurs.
+
+|Les constructeurs ont des paramètres supplémentaires optionnels pour l'objet de comparaison.
+|Les constructeurs ont des paramètres supplémentaires optionnels pour le nombre minimum initial de seaux, une fonction de hachage et un objet d'égalité.
+
+|Les clés `k1`, `k2` sont considérées équivalentes si `!Compare(k1, k2) && !Compare(k2, k1)`.
+|Les clés `k1`, `k2` sont considérées équivalentes si `Pred(k1, k2)`
+
+|Fonction membre `lower_bound(k)` et `upper_bound(k)`
+|Aucun équivalent. Comme les éléments ne sont pas ordonnés, `lower_bound` et `upper_bound` n'auraient pas de sens.
+
+|`equal_range(k)` retourne un intervalle vide à la position où `k` serait inséré si `k` n'est pas présent dans le conteneur.
+|`equal_range(k)` retourne un intervalle à la fin du conteneur si `k` n'est pas présent dans le conteneur. Il ne peut pas retourner un intervalle positionné car `k` pourrait être inséré à plusieurs endroits. +
+**Conteneurs à adressage fermé :** Pour connaître le seau dans lequel `k` serait inséré, utilisez `bucket(k)`. Mais rappelez-vous qu'une insertion peut provoquer un rehachage du conteneur - ce qui signifie que l'élément peut être inséré dans un seau différent.
+
+|`iterator`, `const_iterator` sont de la catégorie bidirectionnelle.
+|`iterator`, `const_iterator` sont au moins de la catégorie forward.
+
+|Les itérateurs, pointeurs et références vers les éléments du conteneur ne sont jamais invalidés.
+|xref:regular.adoc#regular_iterator_invalidation[Les itérateurs peuvent être invalidés par des appels à insert ou rehash]. +
+**Conteneurs basés sur des nœuds :** Les pointeurs et références vers les éléments du conteneur ne sont jamais invalidés. +
+**Conteneurs plats :** Les pointeurs et références vers les éléments du conteneur sont invalidés lors d'un rehachage.
+
+|Les itérateurs parcourent le conteneur dans l'ordre défini par l'objet de comparaison.
+|Les itérateurs parcourent le conteneur dans un ordre arbitraire, qui peut changer lors de l'insertion d'éléments, bien que les éléments équivalents soient toujours adjacents.
+
+|Aucun équivalent
+|**Conteneurs à adressage fermé :** Les itérateurs locaux peuvent être utilisés pour parcourir des seaux individuels. (L'ordre des itérateurs locaux et des itérateurs n'est pas requis d'avoir une correspondance.)
+
+|Peuvent être comparés en utilisant les opérateurs `==`, `!=`, `<`, `\<=`, `>`, `>=`.
+|Peuvent être comparés en utilisant les opérateurs `==` et `!=`.
+
+|
+|Lors d'une insertion avec un indice, les implémentations sont autorisées à ignorer l'indice.
+
+|===
+
+---
+
+[caption=",",  title='Table {counter:table-counter} Complexity Guarantees']
+[cols="1,1,1", frame=all,,  grid=rows]
+|===
+|Opération |Conteneurs associatifs |Conteneurs associatifs non ordonnés
+
+|Construction d'un conteneur vide
+|constant
+|O(_n_) où _n_ est le nombre minimum de seaux.
+
+|Construction d'un conteneur à partir d'une plage de _N_ éléments
+|O(_N log N_), O(_N_) si la plage est triée avec `value_comp()`
+|Cas moyen O(_N_), cas le pire O(_N^2^_)
+
+|Insertion d'un seul élément
+|logarithmique
+|Cas moyen constant, cas le pire linéaire
+
+|Insertion d'un seul élément avec un indice
+|Constant amorti si `t` éléments sont insérés juste après l'indice, logarithmique sinon
+|Cas moyen constant, cas le pire linéaire (c'est-à-dire le même qu'une insertion normale).
+
+|Insertion d'une plage de _N_ éléments
+|_N_ log(`size()` + _N_)
+|Cas moyen O(_N_), cas le pire O(_N_ * `size()`)
+
+|Effacer par clé, `k`
+|O(log(`size()`) + `count(k)`)
+|Cas moyen : O(`count(k)`), Cas le pire : O(`size()`)
+
+|Effacer un seul élément par itérateur
+|Constant amorti
+|Cas moyen : O(1), Cas le pire : O(`size()`)
+
+|Effacer une plage de _N_ éléments
+|O(log(`size()`) + _N_)
+|Cas moyen : O(_N_), Cas le pire : O(`size()`)
+
+|Vidage du conteneur
+|O(`size()`)
+|O(`size()`)
+
+|Recherche
+|logarithmique
+|Cas moyen : O(1), Cas le pire : O(`size()`)
+
+|Compter
+|O(log(`size()`) + `count(k)`)
+|Cas moyen : O(1), Cas le pire : O(`size()`)
+
+|`equal_range(k)`
+|logarithmique
+|Cas moyen : O(`count(k)`), Cas le pire : O(`size()`)
+
+|`lower_bound`,`upper_bound`
+|logarithmique
+|n/a
+
+|===
