@@ -1,0 +1,180 @@
+[#regular]
+= 常规容器
+
+:idprefix: regular_
+
+Boost.Unordered 的闭散列容器（`boost::unordered_set`、`boost::unordered_map`、`boost::unordered_multiset` 和 `boost::unordered_multimap`）完全符合 C++ 标准对无序关联容器的规范。因此，对于熟悉 `std::unordered_set`、`std::unordered_map` 等的用户来说，Boost.Unordered 中的同名容器可直接替换使用。开散列容器（`boost::unordered_node_set`、`boost::unordered_node_map`、`boost::unordered_flat_set` 和 `boost::unordered_flat_map`）的接口非常相似，但存在一些细微差异，具体列在专门的 xref:compliance.adoc#compliance_open_addressing_containers[标准合规性章节] 中。
+
+
+对于没有哈希容器使用经验但熟悉常规关联容器（`std::set`、`std::map`、`std::multiset` 和 `std::multimap`）的读者，Boost.Unordered 容器的使用方式类似：
+
+[source, cpp]
+----
+typedef boost::unordered_map<std::string, int> map;
+map x;
+x["one"] = 1;
+x["two"] = 2;
+x["three"] = 3;
+
+assert(x.at("one") == 1);
+assert(x.find("missing") == x.end());
+----
+
+但由于元素无序，以下代码的输出：
+
+[source, c++]
+----
+for(const map::value_type& i: x) {
+    std::cout<<i.first<<","<<i.second<<"\n";
+}
+----
+
+可能是任意顺序。例如，可能为：
+
+[source]
+----
+two,2
+one,1
+three,3
+----
+
+其他差异列在 xref:regular.adoc#comparison[与关联容器的比较] 章节中。
+
+== 迭代器失效
+
+除 `rehash` 和 `reserve` 外，未规定其他成员函数如何影响桶数量。尽管 `insert` 仅当插入导致容器负载超过允许最大值时才会使迭代器失效。对于大多数实现，这意味着 `insert` 仅在此情况下才会改变桶数量。调用 `insert`、`rehash` 和 `reserve` 可能使迭代器失效。
+
+对于指针和引用，基于节点的容器（`boost::unordered_[multi]set`、`boost::unordered_[multi]map`、`boost::unordered_node_set`、`boost::unordered_node_map`）永远不会失效，但对于 `boost::unordered_flat_set` 和 `boost::unordered_flat_map`，当重哈希发生时它们会失效：这是因为这些容器将元素直接存储在桶中，因此分配新桶数组时必须通过移动构造转移元素。
+
+类似于对 `vector` 使用 `reserve`，在插入大量元素前调用 `reserve` 是明智的做法。这将提前完成昂贵的重哈希操作，并允许安全存储迭代器而无需担心失效。若需向容器 `x` 插入 `n` 个元素，可先调用：
+
+```
+
+x.reserve(n);
+
+```
+
+注意:: `reserve(n)` 为至少 `n` 个元素预留空间，分配足够桶数以不超过最大负载因子。
++
+由于最大负载因子定义为元素数量除以可用桶总数，此函数在逻辑上等价于：
++
+```
+
+x.rehash(std::ceil(n / x.max_load_factor()))
+
+```
++
+有关 `rehash` 函数的更多详情，请参阅 xref:reference/unordered_map.adoc#unordered_map_rehash[参考文档]。
+
+[#comparison]
+
+:idprefix: comparison_
+
+== 与关联容器的比较
+
+[caption=",",  title='Table {counter:table-counter} Interface differences']
+[cols="1,1", frame=all,,  grid=rows]
+|===
+|关联容器 |无序关联容器
+
+|通过排序关系 `Compare` 参数化
+|通过函数对象 `Hash` 和等价关系 `Pred` 参数化
+
+|可通过成员函数 `key_comp()` 访问 `key_compare` 比较键值，通过成员函数 `value_comp()` 访问 `value_compare` 比较元素值。
+|可通过成员函数 `hash_function()` 访问 `hasher` 对键进行哈希，通过成员函数 `key_eq()` 访问 `key_equal` 检查键的等价性。没有用于比较或哈希元素值的函数对象。
+
+|构造函数包含可选的比较对象参数。
+|构造函数包含可选的初始最小桶数、哈希函数和等价对象参数。
+
+|若满足 `!Compare(k1, k2) && !Compare(k2, k1)`，则键 `k1`、`k2` 被视为等价。
+|若满足 `Pred(k1, k2)`，则键 `k1`、`k2` 被视为等价。
+
+|成员函数 `lower_bound(k)` 和 `upper_bound(k)`
+|无等效功能。由于元素无序，`lower_bound` 和 `upper_bound` 无意义。
+
+|若 `k` 不存在于容器中，`equal_range(k)` 在 `k` 应插入位置返回空范围。
+|若 `k` 不存在于容器中，`equal_range(k)` 在容器末尾返回范围。无法返回定位范围，因为 `k` 可插入多个位置。 +
+**闭散列容器：** 要查找 `k` 应插入的桶，请使用 `bucket(k)`。但需注意插入操作可能导致容器重哈希——即元素可能被插入到不同桶中。
+
+|`iterator`、`const_iterator` 属于双向迭代器类别。
+|`iterator`、`const_iterator` 至少属于前向迭代器类别。
+
+|指向容器元素的迭代器、指针和引用永不失效。
+|xref:regular.adoc#regular_iterator_invalidation[调用 insert 或 rehash 可能使迭代器失效]。 +
+**基于节点的容器：** 指向容器元素的指针和引用永不失效。 +
+**扁平容器：** 重哈希发生时，指向容器元素的指针和引用会失效。
+
+|迭代器按比较对象定义的顺序遍历容器。
+|迭代器以任意顺序遍历容器，该顺序可能随元素插入而改变，但等价元素始终相邻。
+
+|无等效功能
+|**闭散列容器：** 局部迭代器可用于遍历单个桶。（不要求局部迭代器与全局迭代器的顺序存在对应关系。）
+
+|可使用 `==`、`!=`、`<`、`<=`、`>`、`>=` 运算符进行比较。
+|可使用 `==` 和 `!=` 运算符进行比较。
+
+|
+|使用提示插入时，实现可忽略提示。
+
+|===
+
+---
+
+[caption=",",  title='Table {counter:table-counter} Complexity Guarantees']
+[cols="1,1,1", frame=all,,  grid=rows]
+|===
+|操作 |关联容器 |无序关联容器
+
+|构造空容器
+|常数
+|O(_n_)，其中 _n_ 为最小桶数量。
+
+|通过包含 _N_ 个元素的范围构造容器
+|O(_N log N_)，若范围已按 `value_comp()` 排序则为 O(_N_)
+|平均情况 O(_N_)，最坏情况 O(_N^2^_)
+
+|插入单个元素
+|对数级
+|平均情况常数级，最坏情况线性级
+
+|使用提示插入单个元素
+|若在提示位置后立即插入元素则为均摊常数级，否则为对数级
+|平均情况常数级，最坏情况线性级（即与普通插入相同）
+
+|插入包含 _N_ 个元素的范围
+|_N_ log(`size()` + _N_)
+|平均情况 O(_N_)，最坏情况 O(_N_ * `size()`)
+
+|按键值 `k` 删除
+|O(log(`size()`) + `count(k)`)
+|平均情况：O(`count(k)`)，最坏情况：O(`size()`)
+
+|通过迭代器删除单个元素
+|均摊常数级
+|平均情况：O(1)，最坏情况：O(`size()`)
+
+|删除包含 _N_ 个元素的范围
+|O(log(`size()`) + _N_)
+|平均情况：O(_N_)，最坏情况：O(`size()`)
+
+|清空容器
+|O(`size()`)
+|O(`size()`)
+
+|查找
+|对数级
+|平均情况：O(1)，最坏情况：O(`size()`)
+
+|计数
+|O(log(`size()`) + `count(k)`)
+|平均情况：O(1)，最坏情况：O(`size()`)
+
+|`equal_range(k)`
+|对数级
+|平均情况：O(`count(k)`)，最坏情况：O(`size()`)
+
+|`lower_bound`、`upper_bound`
+|对数级
+|不适用
+
+|===
