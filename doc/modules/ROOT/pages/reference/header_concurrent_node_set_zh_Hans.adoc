@@ -1,9 +1,9 @@
 [#header_concurrent_node_set]
-== `<boost/unordered/concurrent_node_set.hpp>` Synopsis
+== `++&lt;++boost/unordered/concurrent++_++node++_++set.hpp++&gt;++` 概要
 
 :idprefix: header_concurrent_node_set_
 
-Defines `xref:reference/concurrent_node_set.adoc#concurrent_node_set[boost::concurrent_node_set]` and associated functions and alias templates.
+定义 xref:reference/concurrent_node_set.adoc#concurrent_node_set[`boost::concurrent++_++node++_++set`] 及其相关函数和别名模板。
 
 [listing,subs="+macros,+quotes"]
 -----
