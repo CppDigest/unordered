@@ -1,6 +1,6 @@
 [#header_unordered_map_fwd]
-== `<boost/unordered/unordered_map_fwd.hpp>` Synopsis
+== `<boost unordered="" unordered_map_fwd.hpp="">`  概要</boost>
 
 :idprefix: header_unordered_map_fwd_
 
-Forward declares all the definitions in xref:reference/header_unordered_map.adoc[`<boost/unordered/unordered_map.hpp>`].
+前向声明 xref:reference/header_unordered_map.adoc[`<boost unordered="" unordered_map.hpp="">`]中的所有定义。</boost>
