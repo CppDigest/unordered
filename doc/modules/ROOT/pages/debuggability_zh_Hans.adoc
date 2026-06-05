@@ -1,64 +1,64 @@
 [#debuggability]
 :idprefix: debuggability_
 
-= Debuggability
+= 可调试性
 
-== Visual Studio Natvis
+== 调试可视化
 
-All containers and iterators have custom visualizations in the Natvis framework.
+所有容器和迭代器在 Natvis 框架中均具备自定义可视化功能。
 
-=== Using in your project
+=== 在项目中使用
 
-To visualize Boost.Unordered containers in the Natvis framework in your project, simply add the file link:https://github.com/boostorg/unordered/blob/develop/extra/boost_unordered.natvis[/extra/boost_unordered.natvis] to your Visual Studio project as an "Existing Item".
+若要在项目中通过 Natvis 框架实现 Boost.Unordered 容器的可视化调试，只需将文件 link:https://github.com/boostorg/unordered/blob/develop/extra/boost_unordered.natvis[/extra/boost++_++unordered.natvis] 作为"现有项"添加到 Visual Studio 项目中即可。
 
-=== Visualization structure
+=== 可视化结构
 
-The visualizations mirror those for the standard unordered containers. A container has a maximum of 100 elements displayed at once. Each set element has its item name listed as `[i]`, where `i` is the index in the display, starting at `0`. Each map element has its item name listed as `[\{key-display}]` by default. For example, if the first element is the pair `("abc", 1)`, the item name will be `["abc"]`. This behaviour can be overridden by using the view "ShowElementsByIndex", which switches the map display behaviour to name the elements by index. This same view name is used in the standard unordered containers.
+可视化方案与标准无序容器保持一致。容器单次最多显示 100 个元素。集合类容器中每个元素的项名称显示为 `++[++i++]++` （其中 `i` 为从 `0` 开始的显示索引）。映射元素默认显示为 `++[{++ 键值显示}++]++` ，例如当首元素为键值对 `("abc", 1)` 时，其项名称将显示为 `++[++"abc"++]++` 。用户可通过启用"ShowElementsByIndex"视图模式切换为按索引命名元素，此视图命名规则与标准无序容器保持一致。
 
-By default, the closed-addressing containers will show the `[hash_function]` and `[key_eq]`, the `[spare_hash_function]` and `[spare_key_eq]` if applicable, the `[allocator]`, and the elements. Using the view "detailed" adds the `[bucket_count]` and `[max_load_factor]`. Conversely, using the view "simple" shows only the elements, with no other items present.
+默认情况下，封闭寻址容器将显示 `++[++hash++_++function++]++` 、 `++[++key++_++eq++]++` 、适用的 `++[++spare++_++hash++_++function++]++` 与 `++[++spare++_++key++_++eq++]++` 、 `++[++allocator++]++` 以及元素列表。若启用"detailed"视图将额外显示 `++[++bucket++_++count++]++` 和 `++[++max++_++load++_++factor++]++` 信息；若启用"simple"视图，则仅显示元素列表而不包含其他条目。
 
-By default, the open-addressing containers will show the `[hash_function]`, `[key_eq]`, `[allocator]`, and the elements. Using the view "simple" shows only the elements, with no other items present. Both the SIMD and the non-SIMD implementations are viewable through the Natvis framework.
+默认情况下，开放寻址容器显示 `++[++hash++_++function++]++` 、 `++[++key++_++eq++]++` 、 `++[++allocator++]++` 以及元素列表。若启用 "simple" 视图，则仅显示元素列表而不包含其他条目。无论采用 SIMD 还是非 SIMD 实现，均可通过 Natvis 框架进行可视化调试。
 
-Iterators are displayed similarly to their standard counterparts. An iterator is displayed as though it were the element that it points to. An end iterator is simply displayed as `{ end iterator }`.
+迭代器显示方式与标准迭代器类似：指向元素的迭代器显示为元素值；结束迭代器显示为 `++{++ 结束迭代器 }` 。
 
-=== Fancy pointers
+=== 花式指针
 
-The container visualizations also work if you are using fancy pointers in your allocator, such as `boost::interprocess::offset_ptr`. While this is rare, Boost.Unordered has natvis customization points to support any type of fancy pointer. `boost::interprocess::offset_ptr` has support already defined in the Boost.Interprocess library, and you can add support to your own type by following the instructions contained in a comment near the end of the file link:https://github.com/boostorg/unordered/blob/develop/extra/boost_unordered.natvis[/extra/boost_unordered.natvis].
+分配器中使用花式指针（如 `boost::interprocess::offset++_++ptr` ）时，容器可视化功能仍可正常运作。Boost.Unordered 通过 Natvis 定制点支持所有类型的花式指针。 `boost::interprocess::offset++_++ptr` 已在 Boost.Interprocess 库中预定义支持，自定义类型支持方法请参阅文件 link:https://github.com/boostorg/unordered/blob/develop/extra/boost_unordered.natvis[/extra/boost++_++unordered.natvis] 末尾注释。
 
-== GDB Pretty-Printers
+== GDB 美化打印器
 
-All containers and iterators have a custom GDB pretty-printer.
+所有容器和迭代器均配备自定义 GDB 美化打印器。
 
-=== Using in your project
+=== 在项目中使用
 
-Always, when using pretty-printers, you must enable pretty-printing like below. This is typically a one-time setup.
+使用美化打印器时，必须始终按以下方式启用美化打印功能。此项配置通常只需执行一次。
 
-```plaintext (gdb) set print pretty on ```
+```plaintext
 
-By default, if you compile into an ELF binary format, your binary will contain the Boost.Unordered pretty-printers. To use the embedded pretty-printers, ensure you allow auto-loading like below. This must be done every time you load GDB, or add it to a ".gdbinit" file.
+(gdb) set print pretty on
 
-```plaintext (gdb) add-auto-load-safe-path [/path/to/executable] ```
+```
 
-You can choose to compile your binary _without_ embedding the pretty-printers by defining `BOOST_ALL_NO_EMBEDDED_GDB_SCRIPTS`, which disables the embedded GDB pretty-printers for all Boost libraries that have this feature.
+默认情况下，若编译目标为 ELF 二进制格式，生成的文件将内置 Boost.Unordered 美化打印器。要使用内嵌的美化打印器，请确保按以下方式启用自动加载功能（此操作需在每次启动 GDB 时执行，或将其添加到 ".gdbinit" 配置文件中）。
 
-You can load the pretty-printers externally from the non-embedded Python script. Add the script, link:https://github.com/boostorg/unordered/blob/develop/extra/boost_unordered_printers.py[/extra/boost_unordered_printers.py], using the `source` command as shown below.
+```plaintext
 
-```plaintext (gdb) source [/path/to/boost]/libs/unordered/extra/boost_unordered_printers.py ```
+(gdb) add-auto-load-safe-path [/path/to/executable]
 
-=== Visualization structure
+=== 可视化结构
 
-The visualizations mirror the standard unordered containers. The map containers display an association from key to mapped value. The set containers display an association from index to value. An iterator is either displayed with its item, or as an end iterator. Here is what may be shown for an example `boost::unordered_map`, an example `boost::unordered_set`, and their respective begin and end iterators.
+可视化方案与标准无序容器保持一致：映射容器显示键到映射值的关联；集合容器显示从索引到值的关联关系。迭代器可显示为指向的元素内容，或标记为结束迭代器。下图展示了示例 `boost::unordered++_++map` 、示例 `boost::unordered++_++set` 及其迭代器.
 
-```plaintext (gdb) print example_unordered_map $1 = boost::unordered_map with 3 elements = {["C"] = "c", ["B"] = "b", ["A"] = "a"} (gdb) print example_unordered_map_begin $2 = iterator = { {first = "C", second = "c"} } (gdb) print example_unordered_map_end $3 = iterator = { end iterator } (gdb) print example_unordered_set $4 = boost::unordered_set with 3 elements = {[0] = "c", [1] = "b", [2] = "a"} (gdb) print example_unordered_set_begin $5 = iterator = { "c" } (gdb) print example_unordered_set_end $6 = iterator = { end iterator } ```
+```plaintext
 
-The other containers are identical other than replacing "`boost::unordered_{map|set}`" with the appropriate template name when displaying the container itself. Note that each sub-element (i.e. the key, the mapped value, or the value) is displayed based on its own printing settings which may include its own pretty-printer.
+(gdb) print example_unordered_map $1 = boost::unordered_map with 3 elements = {["C"] = "c", ["B"] = "b", ["A"] = "a"} (gdb) print example_unordered_map_begin $2 = iterator = { {first = "C", second = "c"} } (gdb) print example_unordered_map_end $3 = iterator = { end iterator } (gdb) print example_unordered_set $4 = boost::unordered_set with 3 elements = {[0] = "c", [1] = "b", [2] = "a"} (gdb) print example_unordered_set_begin $5 = iterator = { "c" } (gdb) print example_unordered_set_end $6 = iterator = { end iterator }
 
-Both the SIMD and the non-SIMD implementations are viewable through the GDB pretty-printers.
+```
 
-For open-addressing containers where xref:hash_quality.adoc#hash_quality_container_statistics[container statistics] are enabled, you can obtain these statistics by calling `get_stats()` on the container, from within GDB. This is overridden in GDB as an link:https://sourceware.org/gdb/current/onlinedocs/gdb.html/Xmethod-API.html[xmethod], so it will not invoke any C++ synchronization code. See the following printout as an example for the expected format.
+其余容器的显示逻辑完全一致，仅在显示容器本身时将其模板名称替换为对应的 "boost::unordered++_{++map++|++set}"。需要注意的事，每个子元素（即键、映射值或值）的显示均取决于其自身的打印设置，这可能包含其专属的美化打印器。
 
-```plaintext (gdb) print example_flat_map.get_stats() $1 = [stats] = {[insertion] = {[count] = 5, [probe_length] = {avg = 1.0, var = 0.0, dev = 0.0}}, [successful_lookup] = {[count] = 0, [probe_length] = {avg = 0.0, var = 0.0, dev = 0.0}, [num_comparisons] = {avg = 0.0, var = 0.0, dev = 0.0}}, [unsuccessful_lookup] = {[count] = 5, [probe_length] = {avg = 1.0, var = 0.0, dev = 0.0}, [num_comparisons] = {avg = 0.0, var = 0.0, dev = 0.0}}} ```
+无论采用 SIMD 还是非 SIMD 实现，均可通过 GDB 美化打印器查看。
 
-=== Fancy pointers
+=== 花式指针
 
-The pretty-printers also work if you are using fancy pointers in your allocator, such as `boost::interprocess::offset_ptr`. While this is rare, Boost.Unordered has GDB pretty-printer customization points to support any type of fancy pointer. `boost::interprocess::offset_ptr` has support already defined in the Boost.Interprocess library, and you can add support to your own type by following the instructions contained in a comment near the end of the file link:https://github.com/boostorg/unordered/blob/develop/extra/boost_unordered_printers.py[/extra/boost_unordered_printers.py].
+当用户在分配器中使用花式指针（例如 `boost::interprocess::offset++_++ptr` ）时，GDB 的美化打印器仍可正常工作。虽然这种情况不常见，但 Boost.Unordered 为美化打印器提供了定制点，以支持任何类型的花式指针。 `boost::interprocess::offset++_++ptr` 的支持已在Boost.Interprocess库中预先定义，自定义类型支持方法请参阅文件 link:https://github.com/boostorg/unordered/blob/develop/extra/boost_unordered_printers.py[/extra/boost++_++unordered++_++printers.py] 的末尾注释。
