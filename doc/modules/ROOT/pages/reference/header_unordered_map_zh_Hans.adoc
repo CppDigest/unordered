@@ -1,9 +1,9 @@
 [#header_unordered_map]
-== `<boost/unordered/unordered_map.hpp>` Synopsis
+== `++&lt;++boost/unordered/unordered++_++map.hpp++&gt;++` 概要
 
 :idprefix: header_unordered_map_
 
-Defines `xref:reference/unordered_map.adoc#unordered_map[boost::unordered_map]`, `xref:reference/unordered_multimap.adoc#unordered_multimap[boost::unordered_multimap]` and associated functions and alias templates.
+定义 xref:reference/unordered_map.adoc#unordered_map[`boost::unordered++_++map`] 、 xref:reference/unordered_multimap.adoc#unordered_multimap[`boost::unordered++_++multimap`] 以及相关函数和别名模板。
 
 [listing,subs="+macros,+quotes"]
 -----
