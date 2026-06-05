@@ -1,5 +1,5 @@
 [#header_unordered_map_fwd_top]
-== `<boost/unordered_map.hpp>` Synopsis
+== `++&lt;++boost/unordered++_++map.hpp++&gt;++` 概要
 
 :idprefix: header_unordered_map_top_
 
