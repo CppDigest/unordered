@@ -1,6 +1,6 @@
 [#header_unordered_flat_map_fwd]
-== `<boost/unordered/unordered_flat_map_fwd.hpp>` Synopsis
+== `++&lt;++boost/unordered/unordered++_++flat++_++map++_++fwd.hpp++&gt;++` 概要
 
 :idprefix: header_unordered_flat_map_fwd_
 
-Forward declares all the definitions in xref:reference/header_unordered_flat_map.adoc[`<boost/unordered/unordered_flat_map.hpp>`].
+前向声明 xref:reference/header_unordered_flat_map.adoc[`++&lt;++boost/unordered/unordered++_++flat++_++map.hpp++&gt;++`] 中定义的所有内容。
