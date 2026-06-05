@@ -1,11 +1,11 @@
-﻿[#regular] = Regular Containers
+[#regular] = 常规容器
 
 :idprefix: regular_
 
-Boost.Unordered closed-addressing containers (`boost::unordered_set`, `boost::unordered_map`, `boost::unordered_multiset` and `boost::unordered_multimap`) are fully conformant with the C++ specification for unordered associative containers, so for those who know how to use `std::unordered_set`, `std::unordered_map`, etc., their homonyms in Boost.Unordered are drop-in replacements. The interface of open-addressing containers (`boost::unordered_node_set`, `boost::unordered_node_map`, `boost::unordered_flat_set` and `boost::unordered_flat_map`) is very similar, but they present some minor differences listed in the dedicated xref:compliance.adoc#compliance_open_addressing_containers[standard compliance section].
+Boost.Unordered 的闭寻址容器（ `boost::unordered++_++set` 、 `boost::unordered++_++map` 、 `boost::unordered++_++multiset` 与 `boost::unordered++_++multimap` ）完全符合 C{plus}{plus} 无序关联容器的标准规范。因此，对于熟悉 `std::unordered++_++set` 、 `std::unordered++_++map` 等用法的用户，可直接将其替换为Boost.Unordered 中的同名容器。开放寻址容器（ `boost::unordered++_++node++_++set` 、 `boost::unordered++_++node++_++map` 、 `boost::unordered++_++flat++_++set` 和 `boost::unordered++_++flat++_++map` ）的接口与之高度相似，但存在一些细微差异，详见专门的 xref:compliance.adoc#compliance_open_addressing_containers[标准符合性章节] 。
 
 
-For readers without previous experience with hash containers but familiar with normal associative containers (`std::set`, `std::map`, `std::multiset` and `std::multimap`), Boost.Unordered containers are used in a similar manner:
+对于没有哈希容器经验但熟悉常规关联容器（ `std::set` 、 `std::map` 、 `std::multiset` 和 `std::multimap` ）的读者，Boost.Unordered 容器的使用方式与之类似：
 
 [source,cpp]
 ----
@@ -19,7 +19,7 @@ assert(x.at("one") == 1);
 assert(x.find("missing") == x.end());
 ----
 
-But since the elements aren't ordered, the output of:
+但由于元素不按顺序存储，以下代码的输出结果：
 
 [source,c++]
 ----
@@ -28,7 +28,7 @@ for(const map::value_type& i: x) {
 }
 ----
 
-can be in any order. For example, it might be:
+可能以任意顺序输出。例如，结果可能为：
 
 [source]
 ----
@@ -37,26 +37,28 @@ one,1
 three,3
 ----
 
-There are other differences, which are listed in the xref:regular.adoc#comparison[Comparison with Associative Containers] section.
+其他差异列于 xref:regular.adoc#comparison[与关联容器的对比] 章节中。
 
-== Iterator Invalidation
+== 迭代器失效
 
-It is not specified how member functions other than `rehash` and `reserve` affect the bucket count, although `insert` can only invalidate iterators when the insertion causes the container's load to be greater than the maximum allowed. For most implementations this means that `insert` will only change the number of buckets when this happens. Iterators can be invalidated by calls to `insert`, `rehash` and `reserve`.
+标准未明确规定除 `rehash` 和 `reserve` 之外的成员函数如何影响桶数量，但 `insert` 操作仅当导致容器负载超过最大允许值时才会使迭代器失效。在大多数实现中，这意味着 `insert` 仅在此种情况下才会改变桶的数量。迭代器可能因调用 `insert` 、 `rehash` 或 `reserve` 而失效。
 
-As for pointers and references, they are never invalidated for node-based containers (`boost::unordered_[multi]set`, `boost::unordered_[multi]map`, `boost::unordered_node_set`, `boost::unordered_node_map`), but they will be when rehashing occurs for `boost::unordered_flat_set` and `boost::unordered_flat_map`: this is because these containers store elements directly into their holding buckets, so when allocating a new bucket array the elements must be transferred by means of move construction.
+对于基于节点的容器（ `boost::unordered++_[++multi++]++set` 、 `boost::unordered++_[++multi++]++map` 、 `boost::unordered++_++node++_++set` 、 `boost::unordered++_++node++_++map` ），其指针和引用永远不会失效。但对于 `boost::unordered++_++flat++_++set` 和 `boost::unordered++_++flat++_++map` ，在发生重哈希时指针和引用将会失效：这是因为这些容器将元素直接存储在桶中，当分配新的桶数组时，必须通过移动构造来转移元素。
 
-In a similar manner to using `reserve` for ``vector``s, it can be a good idea to call `reserve` before inserting a large number of elements. This will get the expensive rehashing out of the way and let you store iterators, safe in the knowledge that they won't be invalidated. If you are inserting `n` elements into container `x`, you could first call:
+与为 `vector` 使用 `reserve` 类似，在插入大量元素之前调用 `reserve` 是一个好主意。这样可以避免代价高昂的重哈希操作，并且让你能够存储迭代器，确信它们不会被失效。如果你要向容器 `x` 插入 `n` 个元素，可以先调用：
 
 ``` x.reserve(n); ```
 
-Note:: `reserve(n)` reserves space for at least `n` elements, allocating enough buckets
-so as to not exceed the maximum load factor. + Because the maximum load factor is defined as the number of elements divided by the total number of available buckets, this function is logically equivalent to: + ``` x.rehash(std::ceil(n / x.max_load_factor())) ``` + See the xref:reference/unordered_map.adoc#unordered_map_rehash[reference for more details] on the `rehash` function.
+Note:: `reserve(n)` 为至少 `n` 个元素预留空间，分配足够数量的桶，
+以确保不超过最大负载因子。由于最大负载因子定义为元素数量除以可用桶的总数，该函数在逻辑上等价于：
+```cppx.rehash(std::ceil(n / x.max_load_factor()))```
+有关 `rehash` 函数的更多详细信息，请参阅 xref:reference/unordered_map.adoc#unordered_map_rehash[参考文档]。
 
 [#comparison]
 
 :idprefix: comparison_
 
-== Comparison with Associative Containers
+== 与关联容器的对比
 
 [caption=, title='Table {counter:table-counter} Interface differences']
 [cols="1,1", frame=all, grid=rows]
@@ -80,14 +82,15 @@ so as to not exceed the maximum load factor. + Because the maximum load factor i
 
 |`equal_range(k)` returns an empty range at the position that `k` would be inserted if `k` isn't present in the container.
 |`equal_range(k)` returns a range at the end of the container if `k` isn't present in the container. It can't return a positioned range as `k` could be inserted into multiple place. +
-**Closed-addressing containers:** To find out the bucket that `k` would be inserted into use `bucket(k)`. But remember that an insert can cause the container to rehash - meaning that the element can be inserted into a different bucket.
+闭散列容器：使用 bucket (k) 可确定键 k 待插入的哈希桶。需注意，插入操作可能触发容器重新哈希，元素最终会被存入其他哈希桶。
 
 |`iterator`, `const_iterator` are of the bidirectional category.
 |`iterator`, `const_iterator` are of at least the forward category.
 
 |Iterators, pointers and references to the container's elements are never invalidated.
 |xref:regular.adoc#regular_iterator_invalidation[Iterators can be invalidated by calls to insert or rehash]. +
-**Node-based containers:** Pointers and references to the container's elements are never invalidated. + **Flat containers:** Pointers and references to the container's elements are invalidated when rehashing occurs.
+基于节点的容器：指向容器元素的指针和引用永远不会失效。
+扁平容器：发生重新哈希时，指向容器元素的指针和引用将会失效。
 
 |Iterators iterate through the container in the order defined by the comparison object.
 |Iterators iterate through the container in an arbitrary order, that can change as elements are inserted, although equivalent elements are always adjacent.
