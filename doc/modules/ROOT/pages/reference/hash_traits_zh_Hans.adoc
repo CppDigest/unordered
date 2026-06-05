@@ -1,9 +1,9 @@
 [#hash_traits]
-== Hash Traits
+== 哈希特征
 
 :idprefix: hash_traits_
 
-=== `<boost/unordered/hash_traits.hpp>` Synopsis
+=== `++&lt;++boost/unordered/hash++_++traits.hpp++&gt;++` 概要
 
 [listing,subs="+macros,+quotes"]
 -----
@@ -19,8 +19,8 @@ using boost::hash_is_avalanching;
 -----
 
 [horizontal]
-Note:;; This header is deprecated. Use instead `link:../../../../../container_hash/doc/html/hash.html#ref_hash_is_avalanchinghash[boost::hash_is_avalanching]` defined in `link:../../../../../container_hash/doc/html/hash.html#ref_boostcontainer_hashhash_is_avalanching_hpp[<boost/container_hash/hash_is_avalanching.hpp>]`.
+注意;; 此头文件已弃用。请改用定义于 link:../../../../../container_hash/doc/html/hash.html#ref_boostcontainer_hashhash_is_avalanching_hpp[`++&lt;++boost/container++_++hash/hash++_++is++_++avalanching.hpp++&gt;++`] 中的 link:../../../../../container_hash/doc/html/hash.html#ref_hash_is_avalanchinghash[`boost::hash++_++is++_++avalanching`] 。
 
-Open-addressing and concurrent containers use the provided hash function `Hash` as-is if `hash_is_avalanching<Hash>::value` is `true`; otherwise, they implement a bit-mixing post-processing stage to increase the quality of hashing at the expense of extra computational cost.
+当 `hash++_++is++_++avalanching++&lt;++Hash++&gt;++::value` 为 `true` 时，开放寻址和并发容器会直接使用所提供的哈希函数 `Hash` ；否则它们将实施位混合后处理阶段，以牺牲额外计算成本为代价来提升哈希质量。
 
 ---
