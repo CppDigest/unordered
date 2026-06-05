@@ -1,9 +1,9 @@
 [#header_unordered_node_map]
-== `<boost/unordered/unordered_node_map.hpp>` Synopsis
+== `<boost unordered="" unordered_node_map.hpp="">` 概要</boost>
 
 :idprefix: header_unordered_node_map_
 
-Defines `xref:reference/unordered_node_map.adoc#unordered_node_map[boost::unordered_node_map]` and associated functions and alias templates.
+定义 xref:reference/unordered_node_map.adoc#unordered_node_map[boost::unordered_node_map] 及相关函数和别名模板。
 
 [listing,subs="+macros,+quotes"]
 -----
