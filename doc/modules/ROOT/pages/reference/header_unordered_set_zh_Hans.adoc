@@ -1,9 +1,9 @@
 [#header_unordered_set]
-== `<boost/unordered/unordered_set.hpp>` Synopsis
+== `++&lt;++boost/unordered/unordered++_++set.hpp++&gt;++` 概要
 
 :idprefix: header_unordered_set_
 
-Defines `xref:reference/unordered_set.adoc#unordered_set[boost::unordered_set]`, `xref:reference/unordered_multiset.adoc#unordered_multiset[boost::unordered_multiset]` and associated functions and alias templates.
+定义 xref:reference/unordered_set.adoc#unordered_set[`boost::unordered++_++set`] 、 xref:reference/unordered_multiset.adoc#unordered_multiset[`boost::unordered++_++multiset`] 以及相关的函数和别名模板。
 
 [listing,subs="+macros,+quotes"]
 -----
