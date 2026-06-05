@@ -1,11 +1,11 @@
 [#stats]
-== Statistics
+== 统计信息
 
 :idprefix: stats_
 
-Open-addressing and concurrent containers can be configured to keep running statistics of some internal operations affected by the quality of the supplied hash function.
+开放寻址和并发容器可配置为持续统计受所提供哈希函数质量影响的某些内部操作。
 
-=== Synopsis
+=== 概要
 
 [listing,subs="+macros,+quotes"]
 -----
@@ -37,26 +37,26 @@ struct xref:reference/stats.adoc#stats_stats_type[__stats-type__]
 };
 -----
 
-==== __stats-summary-type__
+==== _统计摘要类型_
 
-Provides the average value, variance and standard deviation of a sequence of numerical values.
+提供数值序列的平均值、方差和标准差。
 
-==== __insertion-stats-type__
+==== _插入统计类型_
 
-Provides the number of insertion operations performed by a container and statistics on the associated __probe length__ (number of xref:structures.adoc#structures_open_addressing_containers[bucket groups] accessed per operation).
+提供容器执行的插入操作次数及相关__探查长度__（每次操作访问的 xref:structures.adoc#structures_open_addressing_containers[桶组] 数量）的统计信息。
 
-==== __lookup-stats-type__
+==== _查找统计类型_
 
-For successful (element found) or unsuccessful (not found) lookup, provides the number of operations performed by a container and statistics on the associated __probe length__ (number of xref:structures.adoc#structures_open_addressing_containers[bucket groups] accessed) and number of element comparisons per operation.
+对于成功（找到元素）或失败（未找到）查找操作，提供容器执行的操作次数及相关__探查长度__（访问的 xref:structures.adoc#structures_open_addressing_containers[桶组] 数量）和每次操作的元素比较次数的统计信息。
 
-==== __stats-type__
+==== _stats-type_
 
-Provides statistics on insertion, successful and unsuccessful lookups performed by a container. If the supplied hash function has good quality, then:
+提供容器执行的插入操作、成功及失败查找操作的统计信息。若提供的哈希函数质量良好，则：
 
-* Average probe lenghts should be close to 1.0.
-* For successful lookups, the average number of element comparisons should be close to 1.0.
-* For unsuccessful lookups, the average number of element comparisons should be close to 0.0.
+* 平均探查长度应接近1.0。
+* 对于成功查找，平均元素比较次数应接近 1.0。
+* 对于失败查找，平均元素比较次数应接近 0.0。
 
-These statistics can be used to determine if a given hash function can be marked as link:../../../../../container_hash/doc/html/hash.html#ref_hash_is_avalanchinghash[__avalanching__].
+这些统计信息可用于判断给定的哈希函数是否可被标记为 link:../../../../../container_hash/doc/html/hash.html#ref_hash_is_avalanchinghash[_雪崩效应_] 。
 
 ---
