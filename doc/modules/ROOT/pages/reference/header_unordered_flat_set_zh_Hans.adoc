@@ -1,9 +1,9 @@
 [#header_unordered_flat_set]
-== `<boost/unordered/unordered_flat_set.hpp>` Synopsis
+== `++&lt;++boost/unordered/unordered++_++flat++_++set.hpp++&gt;++` 概要
 
 :idprefix: header_unordered_flat_set_
 
-Defines `xref:reference/unordered_flat_set.adoc#unordered_flat_set[boost::unordered_flat_set]` and associated functions and alias templates.
+定义 xref:reference/unordered_flat_set.adoc#unordered_flat_set[`boost::unordered++_++flat++_++set`] 以及相关的函数和别名模板。
 
 [listing,subs="+macros,+quotes"]
 -----
