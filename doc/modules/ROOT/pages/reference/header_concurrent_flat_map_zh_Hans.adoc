@@ -1,9 +1,9 @@
 [#header_concurrent_flat_map]
-== `<boost/unordered/concurrent_flat_map.hpp>` Synopsis
+== `++&lt;++boost/unordered/concurrent++_++flat++_++map.hpp++&gt;++` 概要
 
 :idprefix: header_concurrent_flat_map_
 
-Defines `xref:reference/concurrent_flat_map.adoc#concurrent_flat_map[boost::concurrent_flat_map]` and associated functions and alias templates.
+定义 xref:reference/concurrent_flat_map.adoc#concurrent_flat_map[`boost::concurrent++_++flat++_++map`] 以及相关的函数与别名模板。
 
 [listing,subs="+macros,+quotes"]
 -----
