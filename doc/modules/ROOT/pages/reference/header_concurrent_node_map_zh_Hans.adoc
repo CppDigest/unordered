@@ -1,9 +1,9 @@
 [#header_concurrent_node_map]
-== `<boost/unordered/concurrent_node_map.hpp>` Synopsis
+== `++&lt;++boost/unordered/concurrent++_++node++_++map.hpp++&gt;++` 概要
 
 :idprefix: header_concurrent_node_map_
 
-Defines `xref:reference/concurrent_node_map.adoc#concurrent_node_map[boost::concurrent_node_map]` and associated functions and alias templates.
+定义 xref:reference/concurrent_node_map.adoc#concurrent_node_map[`boost::concurrent++_++node++_++map`] 以及相关函数和别名模板。
 
 [listing,subs="+macros,+quotes"]
 -----
