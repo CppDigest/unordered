@@ -1,0 +1,168 @@
+[#regular] = 常规容器
+
+:idprefix: regular_
+
+Boost.Unordered 的闭寻址容器（ `boost::unordered++_++set` 、 `boost::unordered++_++map` 、 `boost::unordered++_++multiset` 与 `boost::unordered++_++multimap` ）完全符合 C{plus}{plus} 无序关联容器的标准规范。因此，对于熟悉 `std::unordered++_++set` 、 `std::unordered++_++map` 等用法的用户，可直接将其替换为Boost.Unordered 中的同名容器。开放寻址容器（ `boost::unordered++_++node++_++set` 、 `boost::unordered++_++node++_++map` 、 `boost::unordered++_++flat++_++set` 和 `boost::unordered++_++flat++_++map` ）的接口与之高度相似，但存在一些细微差异，详见专门的 xref:compliance.adoc#compliance_open_addressing_containers[标准符合性章节] 。
+
+
+对于没有哈希容器经验但熟悉常规关联容器（ `std::set` 、 `std::map` 、 `std::multiset` 和 `std::multimap` ）的读者，Boost.Unordered 容器的使用方式与之类似：
+
+[source,cpp]
+----
+typedef boost::unordered_map<std::string, int> map;
+map x;
+x["one"] = 1;
+x["two"] = 2;
+x["three"] = 3;
+
+assert(x.at("one") == 1);
+assert(x.find("missing") == x.end());
+----
+
+但由于元素不按顺序存储，以下代码的输出结果：
+
+[source,c++]
+----
+for(const map::value_type& i: x) {
+    std::cout<<i.first<<","<<i.second<<"\n";
+}
+----
+
+可能以任意顺序输出。例如，结果可能为：
+
+[source]
+----
+two,2
+one,1
+three,3
+----
+
+其他差异列于 xref:regular.adoc#comparison[与关联容器的对比] 章节中。
+
+== 迭代器失效
+
+标准未明确规定除 `rehash` 和 `reserve` 之外的成员函数如何影响桶数量，但 `insert` 操作仅当导致容器负载超过最大允许值时才会使迭代器失效。在大多数实现中，这意味着 `insert` 仅在此种情况下才会改变桶的数量。迭代器可能因调用 `insert` 、 `rehash` 或 `reserve` 而失效。
+
+对于基于节点的容器（ `boost::unordered++_[++multi++]++set` 、 `boost::unordered++_[++multi++]++map` 、 `boost::unordered++_++node++_++set` 、 `boost::unordered++_++node++_++map` ），其指针和引用永远不会失效。但对于 `boost::unordered++_++flat++_++set` 和 `boost::unordered++_++flat++_++map` ，在发生重哈希时指针和引用将会失效：这是因为这些容器将元素直接存储在桶中，当分配新的桶数组时，必须通过移动构造来转移元素。
+
+与为 `vector` 使用 `reserve` 类似，在插入大量元素之前调用 `reserve` 是一个好主意。这样可以避免代价高昂的重哈希操作，并且让你能够存储迭代器，确信它们不会被失效。如果你要向容器 `x` 插入 `n` 个元素，可以先调用：
+
+``` x.reserve(n); ```
+
+Note:: `reserve(n)` 为至少 `n` 个元素预留空间，分配足够数量的桶，
+以确保不超过最大负载因子。由于最大负载因子定义为元素数量除以可用桶的总数，该函数在逻辑上等价于：
+```cppx.rehash(std::ceil(n / x.max_load_factor()))```
+有关 `rehash` 函数的更多详细信息，请参阅 xref:reference/unordered_map.adoc#unordered_map_rehash[参考文档]。
+
+[#comparison]
+
+:idprefix: comparison_
+
+== 与关联容器的对比
+
+[caption=, title='Table {counter:table-counter} Interface differences']
+[cols="1,1", frame=all, grid=rows]
+|===
+|Associative Containers |Unordered Associative Containers
+
+|Parameterized by an ordering relation `Compare`
+|Parameterized by a function object `Hash` and an equivalence relation `Pred`
+
+|Keys can be compared using `key_compare` which is accessed by member function `key_comp()`, values can be compared using `value_compare` which is accessed by member function `value_comp()`.
+|Keys can be hashed using `hasher` which is accessed by member function `hash_function()`, and checked for equality using `key_equal` which is accessed by member function `key_eq()`. There is no function object for compared or hashing values.
+
+|Constructors have optional extra parameters for the comparison object.
+|Constructors have optional extra parameters for the initial minimum number of buckets, a hash function and an equality object.
+
+|Keys `k1`, `k2` are considered equivalent if `!Compare(k1, k2) && !Compare(k2, k1)`.
+|Keys `k1`, `k2` are considered equivalent if `Pred(k1, k2)`
+
+|Member function `lower_bound(k)` and `upper_bound(k)`
+|No equivalent. Since the elements aren't ordered `lower_bound` and `upper_bound` would be meaningless.
+
+|`equal_range(k)` returns an empty range at the position that `k` would be inserted if `k` isn't present in the container.
+|`equal_range(k)` returns a range at the end of the container if `k` isn't present in the container. It can't return a positioned range as `k` could be inserted into multiple place. +
+闭散列容器：使用 bucket (k) 可确定键 k 待插入的哈希桶。需注意，插入操作可能触发容器重新哈希，元素最终会被存入其他哈希桶。
+
+|`iterator`, `const_iterator` are of the bidirectional category.
+|`iterator`, `const_iterator` are of at least the forward category.
+
+|Iterators, pointers and references to the container's elements are never invalidated.
+|xref:regular.adoc#regular_iterator_invalidation[Iterators can be invalidated by calls to insert or rehash]. +
+基于节点的容器：指向容器元素的指针和引用永远不会失效。
+扁平容器：发生重新哈希时，指向容器元素的指针和引用将会失效。
+
+|Iterators iterate through the container in the order defined by the comparison object.
+|Iterators iterate through the container in an arbitrary order, that can change as elements are inserted, although equivalent elements are always adjacent.
+
+|No equivalent
+|**Closed-addressing containers:** Local iterators can be used to iterate through individual buckets. (The order of local iterators and iterators aren't required to have any correspondence.)
+
+|Can be compared using the `==`, `!=`, `<`, `\<=`, `>`, `>=` operators.
+|Can be compared using the `==` and `!=` operators.
+
+|
+|When inserting with a hint, implementations are permitted to ignore the hint.
+
+|===
+
+---
+
+[caption=, title='Table {counter:table-counter} Complexity Guarantees']
+[cols="1,1,1", frame=all, grid=rows]
+|===
+|Operation |Associative Containers |Unordered Associative Containers
+
+|Construction of empty container
+|constant
+|O(_n_) where _n_ is the minimum number of buckets.
+
+|Construction of container from a range of _N_ elements
+|O(_N log N_), O(_N_) if the range is sorted with `value_comp()`
+|Average case O(_N_), worst case O(_N^2^_)
+
+|Insert a single element
+|logarithmic
+|Average case constant, worst case linear
+
+|Insert a single element with a hint
+|Amortized constant if `t` elements inserted right after hint, logarithmic otherwise
+|Average case constant, worst case linear (ie. the same as a normal insert).
+
+|Inserting a range of _N_ elements
+|_N_ log(`size()` + _N_)
+|Average case O(_N_), worst case O(_N_ * `size()`)
+
+|Erase by key, `k`
+|O(log(`size()`) + `count(k)`)
+|Average case: O(`count(k)`), Worst case: O(`size()`)
+
+|Erase a single element by iterator
+|Amortized constant
+|Average case: O(1), Worst case: O(`size()`)
+
+|Erase a range of _N_ elements
+|O(log(`size()`) + _N_)
+|Average case: O(_N_), Worst case: O(`size()`)
+
+|Clearing the container
+|O(`size()`)
+|O(`size()`)
+
+|Find
+|logarithmic
+|Average case: O(1), Worst case: O(`size()`)
+
+|Count
+|O(log(`size()`) + `count(k)`)
+|Average case: O(1), Worst case: O(`size()`)
+
+|`equal_range(k)`
+|logarithmic
+|Average case: O(`count(k)`), Worst case: O(`size()`)
+
+|`lower_bound`,`upper_bound`
+|logarithmic
+|n/a
+
+|===

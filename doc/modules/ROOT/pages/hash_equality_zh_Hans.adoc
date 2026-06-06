@@ -1,0 +1,70 @@
+[#hash_equality]
+
+:idprefix: hash_equality_
+
+= 相等性谓词与哈希函数
+
+关联容器使用排序关系来规定元素的存储方式，而无序关联容器则依赖相等性谓词与哈希函数。例如， `xref:reference/unordered_map.adoc[boost::unordered_map]`的声明如下：
+
+```cpp template &lt; class Key, class Mapped, class Hash = boost::hash<key>, class Pred = std::equal_to<key>, class Alloc = std::allocator<std::pair<key const,="" mapped=""> &gt; &gt; class unordered_map; ```</std::pair<key></key></key>
+
+哈希函数放在首位，因为你可能只想更改哈希函数而不想更改相等谓词。例如，如果你想使用 https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV-1a_hash[FNV-1a 哈希^]，可以这样写：
+
+```cpp boost::unordered_map<std::string, int,="" hash::fnv_1a=""> dictionary; ```</std::string,>
+
+examples 目录中有一个链接：../../../examples/fnv1.hpp[implementation of FNV-1a^]
+
+```cpp
+
+```cpp struct iequal_to { bool operator()(std::string const&amp; x, std::string const&amp; y) const { return boost::algorithm::iequals(x, y, std::locale()); } };
+
+struct ihash { std::size_t operator()(std::string const&amp; x) const { std::size_t seed = 0; std::locale locale;
+
+for(std::string::const_iterator it = x.begin(); it != x.end(); ++it) { boost::hash_combine(seed, std::toupper(*it, locale)); }
+
+return seed; } }; ```
+
+然后你可以在不区分大小写的字典中使用它：```cpp boost::unordered_map<std::string, int,="" ihash,="" iequal_to=""> idictionary; ```</std::string,>
+
+这是 link:../../../examples/case_insensitive.hpp[/libs/unordered/examples/case_insensitive.hpp^] 处示例的简化版本，该示例支持其他区域设置和字符串类型。
+
+CAUTION: 在使用自定义相等谓词时，请谨慎使用相等（==）运算符
+在使用自定义相等谓词（特别是函数指针）时请务必小心。如果你用不同的相等谓词比较两个容器，结果是未定义的。对于大多数无状态函数对象而言，这种情况不可能发生——因为你只能使用相同的相等谓词来比较对象，所以两个相等谓词必然相等。但如果你使用的是函数指针或有状态的相等谓词（例如 boost::function），则可能会遇到问题。
+
+== 自定义类型
+
+类似地，自定义类型也可使用自定义哈希函数：
+
+```cpp struct point { int x; int y; };
+
+bool operator==(point const&amp; p1, point const&amp; p2) { return p1.x == p2.x &amp;&amp; p1.y == p2.y; }
+
+struct point_hash { std::size_t operator()(point const&amp; p) const { std::size_t seed = 0; boost::hash_combine(seed, p.x); boost::hash_combine(seed, p.y); return seed; } };
+
+boost::unordered_multiset<point, point_hash=""> points; ```</point,>
+
+由于默认哈希函数是 link:../../../../container_hash/index.html[Boost.Hash^]，我们可以扩展它以支持该类型，从而无需显式给出哈希函数：
+
+```cpp struct point { int x; int y; };
+
+bool operator==(point const&amp; p1, point const&amp; p2) { return p1.x == p2.x &amp;&amp; p1.y == p2.y; }
+
+std::size_t hash_value(point const&amp; p) { std::size_t seed = 0; boost::hash_combine(seed, p.x); boost::hash_combine(seed, p.y); return seed; }
+
+// Now the default function objects work.
+boost::unordered_multiset<point> points; ```</point>
+
+有关如何执行此操作的更多详细信息，请参阅 link:../../../../container_hash/index.html[Boost.Hash 文档^]。请记住，它依赖于标准扩展—因此它不适用于无序关联容器的其他实现，你需要显式使用 Boost.Hash。
+
+[caption=, title='Table {counter:table-counter} Methods for accessing the hash and equality functions']
+[cols="1,.^1", frame=all, grid=rows]
+|===
+|Method |Description
+
+|`hasher hash_function() const`
+|Returns the container's hash function.
+
+|`key_equal key_eq() const`
+|Returns the container's key equality function..
+
+|===

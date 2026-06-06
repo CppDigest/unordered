@@ -1,0 +1,26 @@
+[#hash_traits]
+== 哈希特征
+
+:idprefix: hash_traits_
+
+=== `++&lt;++boost/unordered/hash++_++traits.hpp++&gt;++` 概要
+
+[listing,subs="+macros,+quotes"]
+-----
+#include <boost/container_hash/hash_is_avalanching.hpp>
+
+namespace boost {
+namespace unordered {
+
+using boost::hash_is_avalanching;
+
+} // namespace unordered
+} // namespace boost
+-----
+
+[horizontal]
+注意;; 此头文件已弃用。请改用定义于 link:../../../../../container_hash/doc/html/hash.html#ref_boostcontainer_hashhash_is_avalanching_hpp[`++&lt;++boost/container++_++hash/hash++_++is++_++avalanching.hpp++&gt;++`] 中的 link:../../../../../container_hash/doc/html/hash.html#ref_hash_is_avalanchinghash[`boost::hash++_++is++_++avalanching`] 。
+
+当 `hash++_++is++_++avalanching++&lt;++Hash++&gt;++::value` 为 `true` 时，开放寻址和并发容器会直接使用所提供的哈希函数 `Hash` ；否则它们将实施位混合后处理阶段，以牺牲额外计算成本为代价来提升哈希质量。
+
+---

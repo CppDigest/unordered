@@ -1,0 +1,9 @@
+[#header_unordered_set_fwd_top]
+== `++&lt;++boost/unordered++_++set.hpp++&gt;++` 概要
+
+:idprefix: header_unordered_set_top_
+
+[listing,subs="+macros,+quotes"]
+-----
+#include xref:reference/header_unordered_set.adoc[<boost/unordered/unordered_set.hpp>]
+-----

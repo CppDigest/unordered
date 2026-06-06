@@ -1,0 +1,12 @@
+[#bibliography]
+
+:idprefix: bibliography_
+
+= 文献目录
+
+* _C/C++ Users Journal_. February, 2006. Pete Becker. http://www.ddj.com/cpp/184402066[STL and TR1: ：第三部分 — 无序容器^] 。 +
+关于标准无序容器的介绍性文章。
+* __维基百科__中的 https://en.wikipedia.org/wiki/Hash_table[哈希表^] 。 +
+这是关于哈希表实现原理的概述，重点探讨了链地址法和开放地址法两种实现路径的差异。
+* Peter Dimov，2022年。 https://pdimov.github.io/articles/unordered_dev_plan.html[Boost.Unordered库开发计划^] 。
+

@@ -1,0 +1,6 @@
+[#header_concurrent_flat_set_fwd]
+== `++&lt;++boost/unordered/concurrent++_++flat++_++set++_++fwd.hpp++&gt;++` 概要
+
+:idprefix: header_concurrent_flat_set_fwd_
+
+前向声明 xref:reference/header_concurrent_flat_set.adoc[`++&lt;++boost/unordered/concurrent++_++flat++_++set.hpp++&gt;++`] 中的所有定义。

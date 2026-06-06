@@ -1,0 +1,114 @@
+[#hash_quality] = 哈希质量
+
+:idprefix: hash_quality_
+
+为了正常工作，哈希表要求提供的哈希函数具有__高质量__，这大致意味着它应尽可能均匀地使用其 `std::size++_++t` 输出空间，就像随机数生成器那样——当然，不同之处在于哈希函数的值并非随机，而是由其输入参数严格决定。
+
+Boost.Unordered 中的闭寻址容器对质量不理想的哈希函数具有较好的鲁棒性，但开放寻址和并发容器对此因素更为敏感。如果哈希函数选择不当，其性能会出现显著下降。通常，使用由 link:../../../../container_hash/index.html[Boost.Hash] 提供或生成的函数可确保质量达标，但在使用其他哈希算法时则需要特别谨慎。
+
+本节剩余的内容仅适用于开放寻址容器与并发容器。
+
+== 哈希后混合处理与雪崩效应属性
+
+即使提供的哈希函数不符合开放寻址所需的均匀分布特性，Boost.Unordered容器的性能通常仍可接受，这是因为库会执行内部__后混合处理__步骤来改善计算哈希值的统计特性。当然这会带来额外的计算开销；若希望禁用后混合处理功能，请按以下方式对哈希函数进行注解：
+
+[source,c++]
+----
+struct my_string_hash_function
+{
+  using is_avalanching = std::true_type; // instruct Boost.Unordered to not use post-mixing
+
+  std::size_t operator()(const std::string& x) const
+  {
+    ...
+  }
+};
+----
+
+通过设置 link:../../../../container_hash/doc/html/hash.html#ref_hash_is_avalanchinghash[`hash++_++is++_++avalanching`] 特征，我们告知Boost.Unordered： `my++_++string++_++hash++_++function` 具有足够高的质量，无需任何后混合处理安全网即可直接使用。但这样做的风险在于，如果哈希函数的表现未达到我们声明的理想状态，则可能导致性能下降。
+
+== 容器统计信息
+
+若在全局定义宏 `BOOST++_++UNORDERED++_++ENABLE++_++STATS` ，开放寻址容器与并发容器将计算与哈希函数质量直接相关的内部统计信息：
+
+[source,c++]
+----
+#define BOOST_UNORDERED_ENABLE_STATS
+#include <boost/unordered/unordered_map.hpp>
+
+...
+
+int main()
+{
+  boost::unordered_flat_map<std::string, int, my_string_hash> m;
+  ... // use m
+
+  auto stats = m.get_stats();
+  ... // inspect stats
+}
+----
+
+`stats` 对象提供以下统计信息：
+
+[source,subs=+quotes]
+----
+stats
+     .insertion                                     // *Insertion operations*
+               .count                               // Number of operations
+               .probe_length                        // Probe length per operation
+                            .average
+                            .variance
+                            .deviation
+	 .successful_lookup                             // *Lookup operations (element found)*
+                       .count                       // Number of operations
+                       .probe_length                // Probe length per operation
+                                    .average
+                                    .variance
+                                    .deviation
+                       .num_comparisons             // Elements compared per operation
+			                           .average
+                                       .variance
+                                       .deviation
+	 .unsuccessful_lookup                           // *Lookup operations (element not found)*
+                         .count                     // Number of operations
+                         .probe_length              // Probe length per operation
+                                      .average
+                                      .variance
+                                      .deviation
+                         .num_comparisons           // Elements compared per operation
+			                             .average
+                                         .variance
+                                         .deviation
+----
+
+系统维护三类内部操作的统计信息：插入操作（不考虑先前查找键是否存在的操作）、成功查找及未命中查找（包括插入元素时触发的内部查询）。__探测长度__是指每次操作所访问的 xref:structures.adoc#structures_open_addressing_containers[桶组] 数量。若哈希函数表现正常：
+
+* 平均探测长度应接近1.0。
+* 每次成功查找的平均比较次数应接近 1.0（即，
+仅检查找到的那个元素）。
+* 每次失败查找的平均比较次数应接近 0.0。
+
+提供了一个链接：../../../benchmark/string_stats.cpp[示例^]，用于展示 `boost::hash<std::string>`、https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV-1a_hash[FNV-1a 哈希^] 以及两种行为不当但被错误标记为具有雪崩效应的自定义哈希函数的容器统计信息。</std::string>
+
+[listing]
+----
+                   boost::unordered_flat_map:   319 ms
+                                   insertion: probe length 1.08771
+                           successful lookup: probe length 1.06206, num comparisons 1.02121
+                         unsuccessful lookup: probe length 1.12301, num comparisons 0.0388251
+
+           boost::unordered_flat_map, FNV-1a:   301 ms
+                                   insertion: probe length 1.09567
+                           successful lookup: probe length 1.06202, num comparisons 1.0227
+                         unsuccessful lookup: probe length 1.12195, num comparisons 0.040527
+
+boost::unordered_flat_map, slightly_bad_hash:   654 ms
+                                   insertion: probe length 1.03443
+                           successful lookup: probe length 1.04137, num comparisons 6.22152
+                         unsuccessful lookup: probe length 1.29334, num comparisons 11.0335
+
+         boost::unordered_flat_map, bad_hash: 12216 ms
+                                   insertion: probe length 699.218
+                           successful lookup: probe length 590.183, num comparisons 43.4886
+                         unsuccessful lookup: probe length 1361.65, num comparisons 75.238
+----
